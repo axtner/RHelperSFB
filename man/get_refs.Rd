@@ -43,5 +43,6 @@ The get_refs function, queries reference sequences and writes them to fasta file
 The query is based in taxon and genetic marker. To connect to the PostgreSQL database from outside the IZW domain it would need ssh connection to the database host and port forwarding to 5433. The db_host must be set to "localhost" then.
 }
 \examples{
+Simple query with default settings: 
 get_refs(tax_query = c("Canis", "Felis"))
 }

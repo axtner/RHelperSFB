@@ -45,5 +45,9 @@ get_reads(
 The get_reads function queries read sequences assigned to a certain taxon and writes them to fasta file. The query is based in sample_id, assigned taxon and taxonomic level. To connect to the PostgreSQL database from outside the IZW domain it would need ssh connection to the database host and port forwarding to 5433. The db_host must be set to "localhost" then.
 }
 \examples{
+Simple use with default settings:
 get_reads(sample_id = c("VDBC144_2_1", "VDBC_185"), tax_query = c("Canis", "Felis"))
+
+Query at family level from different database with different user from the same database host:  
+get_reads(sample_id = "VDBC", tax_query = "Canidae", tax_level = "family", db_name = "my_db", db_user = "my_db_user", db_pwd = "my_db_password")
 }
