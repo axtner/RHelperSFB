@@ -26,7 +26,7 @@ get_reads = function(sample_id = NA,
                      dir = getwd(),
                      file_out = NA,
                      db_name = "biodiv", 
-                     db_user = 'r_select',
+                     db_user = "r_select",
                      db_pwd = "rs#izw22",
                      db_host = "192.168.2.71",
                      db_port = "5433"){
@@ -116,13 +116,17 @@ get_reads = function(sample_id = NA,
     ")
     )
   
-  # create fasta file out of q_tab
-  fa = character(2 * nrow(q_tab))
-  fa[c(TRUE, FALSE)] = sprintf("> %s", paste(q_tab$read_id, q_tab$taxon, q_tab$frequency))
-  fa[c(FALSE, TRUE)] = q_tab$seq_read
-  writeLines(fa, paste0(dir, "/", file_out))
+  if(nrow(q_tab) == 0){
+    message(paste0("No results for \"", sample_id, "\" and \"", tax_query, "\" at the ", tax_level, " level."))
+  } else {
+    # create fasta file out of q_tab
+    fa = character(2 * nrow(q_tab))
+    fa[c(TRUE, FALSE)] = sprintf("> %s", paste(q_tab$read_id, q_tab$taxon, q_tab$frequency))
+    fa[c(FALSE, TRUE)] = q_tab$seq_read
+    writeLines(fa, paste0(dir, "/", file_out))
   
-  message(paste0("\nYou queried ", nrow(q_tab), " sequences from the \"", db_name, "\" database. \nResults are written to the ", paste0("\"", dir, "/", file_out, "\""), " file.", "\n"))
+    message(paste0("\nYou queried ", nrow(q_tab), " sequences from the \"", db_name, "\" database. \nResults are written to the ", paste0("\"", dir, "/", file_out, "\""), " file.", "\n"))
+  }
 
   # disconnect from database
   DBI::dbDisconnect(db)
@@ -218,13 +222,19 @@ get_refs = function(tax_query = NA,
       gen_marker = ", paste0("'", gen_marker, "'"))
   )
   
-  # create fasta file out of q_tab
-  fa = character(2 * nrow(q_tab))
-  fa[c(TRUE, FALSE)] = sprintf("> %s", paste(q_tab$taxon, q_tab$ref_id))
-  fa[c(FALSE, TRUE)] = q_tab$ref_seq
-  writeLines(fa, paste0(dir, "/", file_out))
+  # test if query result is empty
+  if(nrow(q_tab) == 0){
+    message(paste0("No results for \"", sample_id, "\" and \"", tax_query, "\" at the ", tax_level, " level."))
+  } else {
+    
+    # create fasta file out of q_tab
+    fa = character(2 * nrow(q_tab))
+    fa[c(TRUE, FALSE)] = sprintf("> %s", paste(q_tab$taxon, q_tab$ref_id))
+    fa[c(FALSE, TRUE)] = q_tab$ref_seq
+    writeLines(fa, paste0(dir, "/", file_out))
   
-  message(paste0("\nYou queried ", nrow(q_tab), " reference sequences from the \"", db_name, "\" reference database. \nResults are written to the ", paste0("\"", dir, "/", file_out, "\""), " file.", "\n"))
+    message(paste0("\nYou queried ", nrow(q_tab), " reference sequences from the \"", db_name, "\" reference database. \nResults are written to the ", paste0("\"", dir, "/", file_out, "\""), " file.", "\n"))
+  }
   
   # disconnect from database
   DBI::dbDisconnect(db)
