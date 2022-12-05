@@ -81,7 +81,7 @@ get_reads = function(sample_id = NA,
     }
   }
     
-  # create tax_query string q_1 for more flexible LIKE ANY query in combination with ARRAY
+  # create sample_id string q_2 for more flexible LIKE ANY query in combination with ARRAY
   for(i in 1 : length(sample_id)){
     q_i = paste0("'", paste0("%", sample_id[i], "%"), "'")
     if(i == 1){
