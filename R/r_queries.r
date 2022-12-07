@@ -239,6 +239,6 @@ get_refs = function(tax_query = NA,
   # disconnect from database
   DBI::dbDisconnect(db)
   
-  rm("q_1", "q_tab", "db", "fa" )
+  rm("q_1", "q_2", "q_tab", "db", "fa" )
   gc()
 }
