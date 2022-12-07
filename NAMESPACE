@@ -2,4 +2,5 @@
 
 export(get_reads)
 export(get_refs)
+export(rep_tab)
 export(res_tab)
