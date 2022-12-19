@@ -2,7 +2,7 @@
 #' 
 #' demultiplex 
 #' 
-#' Function deploys the read_preprocessing.sh script from the screenforbio pipeline of Alex Crampton-Platt. The original bash script has been edited to eliminate bugs. The bash script uses  <a href="https://emea.support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software.html">bcl2fastq</a> [bcl2fastq](https://emea.support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software.html), [cutadapt](https://doi.org/10.14806/ej.17.1.200), [AdapterRemoval](https://bmcresnotes.biomedcentral.com/articles/10.1186/s13104-016-1900-2) and [usearch](https://www.drive5.com/usearch/). All four programmes must be installed on the computer running the analysis and their superior directory where their executable files are saved must be added to the PATH variable of the environment (e.g. use base::Sys.setenv() to add them in R).  
+#' Function deploys the read_preprocessing.sh script from the screenforbio pipeline of Alex Crampton-Platt. The original bash script has been edited to eliminate bugs. The bash script uses  {\link[bcl2fastq]{https://emea.support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software.html}}, {\link[cutadapt]{https://doi.org/10.14806/ej.17.1.200}}, {\link[AdapterRemoval]{https://bmcresnotes.biomedcentral.com/articles/10.1186/s13104-016-1900-2)}} and {\link[usearch]{https://www.drive5.com/usearch/}}. All four programmes must be installed on the computer running the analysis and their superior directory where their executable files are saved must be added to the PATH variable of the environment (e.g. use base::Sys.setenv() to add them in R).  
 #' 
 #' @param seq_dir Run folder of an Illumina sequencing run.
 #' @param seq_run Sequencing run name (e.g. seq_run = "LeechSeq001").
@@ -13,7 +13,6 @@
 #' @param tag_dir Directory containing a text file with a list of sample names and the sample tags for each plate tag. File name format: PlateLabel.txt (e.g. "p5001.txt"). PlateLabel must match Sample_ID in SampleSheet.csv extactly. File contents format: sample_name fwdTag revTag
 #' @param seq_machine Name of the sequencing machine, needed for the bcl2fastq script that is deployed to convert the base calls files to fastq files. default is set to "M01108", the Illumina MiSeq machine of the Leibniz-IZW. 
 #' 
-
 #' @examples
 #' Simple example to analyse 16S sequencing reads with using th default settings:
 #' demultiplex(seq_dir = "/SequencingData/221114_M01108_0115/", seq_run = "SeqRun001")
