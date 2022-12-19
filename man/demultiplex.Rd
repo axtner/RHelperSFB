@@ -39,7 +39,7 @@ demultiplex
 Function deploys the read_preprocessing.sh script from the screenforbio pipeline of Alex Crampton-Platt. The original bash script has been edited to eliminate bugs. The bash script uses [bcl2fastq](https://emea.support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software.html), [cutadapt](https://doi.org/10.14806/ej.17.1.200), [AdapterRemoval](https://bmcresnotes.biomedcentral.com/articles/10.1186/s13104-016-1900-2) and [usearch](https://www.drive5.com/usearch/). All four programmes must be installed on the computer running the analysis and their superior directory where their executable files are saved must be added to the PATH variable of the environment (e.g. use base::Sys.setenv() to add them in R).
 }
 \examples{
-Simple query with requesting the results for BiDoup NP: 
-rep_tab(sample_id = "VBDC")
+Simple example to analyse 16S sequencing reads with using th default settings:
+demultiplex(seq_dir = "/SequencingData/221114_M01108_0115/", seq_run = "SeqRun001")
 
 }

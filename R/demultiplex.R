@@ -15,8 +15,8 @@
 #' 
 
 #' @examples
-#' Simple query with requesting the results for BiDoup NP: 
-#' rep_tab(sample_id = "VBDC")
+#' Simple example to analyse 16S sequencing reads with using th default settings:
+#' demultiplex(seq_dir = "/SequencingData/221114_M01108_0115/", seq_run = "SeqRun001")
 #' 
 #' @export
 
