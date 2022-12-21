@@ -14,7 +14,7 @@ exec 2> >(tee -a read_preprocessing.`date +%Y-%m-%d`.log >&2)
 
 # for preprocessing PE illumina reads with twin tags (demultiplex, trim primers, QC, merge pairs)
 
-# written by Alex Crampton-Platt for Andreas Wilting (IZW, ScreenForBio project)
+# written by Alex Crampton-Platt for Andreas Wilting (IZW, ScreenForBio project), edited and changed by Jan Axtner (Leibniz-IZW)
 
 # usage: bash read_preprocessing.sh pathToData MiSeq RunName readLength tagLength SampleSheet loci sampleTagDir
 # where:
@@ -172,7 +172,7 @@ echo "Step 3: Assign to sample"
 echo "Using AdapterRemoval to split reads from each plate into samples..."
 for plate in ${plate_name[@]}
 do
-if [[ "${plate,,}" != *"Undetermined"* ]]
+if [[ "${plate}" != *"Undetermined"* ]]
   then
   echo "Processing $plate..."
   AdapterRemoval --file1 ./${PREFIX}/data/plates/${plate}_R1.fastq.gz --file2 ./${PREFIX}/data/plates/${plate}_R2.fastq.gz --basename ./${PREFIX}/data/samples/${plate} --barcode-list ${SAMPLEDIR}/${plate}.txt --barcode-mm-r1 1 --barcode-mm-r2 1 --threads 4 --maxn 50
@@ -258,13 +258,6 @@ do
 			else
 				echo "...CytB absent"
 			fi
-			if [ ${COX1} == 1 ]
-			then
-				echo "...COI present"
-				clip_COI
-			else
-				echo "...COI absent"
-			fi
 		else
 			echo "	Too few sequences (<500) to process. Skipping..."
 			echo ""
@@ -323,20 +316,6 @@ do
 	else
 		echo "...CytB absent from run"
 	fi
-	if [ ${COX1} == 1 ]
-	then
-		if [ -f ./${PREFIX}/data/primerclip/${sample}.COI.fq ] && [ -s ./${PREFIX}/data/primerclip/${sample}.COI.fq ]
-		then
-			LOCUS=(COI)
-			echo "	...filtering COI"
-			filter
-		else
-			echo "	...COI reads from previous step (primer clip) unavailable."
-			echo ""
-		fi
-	else
-		echo "...COI absent from run"
-	fi
 done
 echo ""
 echo "Done."
@@ -388,20 +367,6 @@ do
 	else
 		echo "...CytB absent from run"
 	fi
-	if [ ${COX1} == 1 ]
-	then
-		if [ -f ./${PREFIX}/data/filter/${sample}.COI.filter.fq ] && [ -s ./${PREFIX}/data/filter/${sample}.COI.filter.fq ]
-		then
-			LOCUS=(COI)
-			echo "	...dereplicating COI"
-			derep
-		else
-			echo "	...COI reads from previous step (quality filter) unavailable."
-			echo ""
-		fi
-	else
-		echo "...COI absent from run"
-	fi
 done
 echo ""
 echo "Done."
@@ -409,7 +374,7 @@ echo ""
 echo "Step 8: Print results table"
 echo "Generate empty results table..."
 touch ./${PREFIX}/pre-processing_results.${DATE}.txt
-printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" "Sample" "Raw_reads" "Merged_pairs" "12S_clipped" "16S_clipped" "CytB_clipped" "COI_clipped" "12S_filtered" "16S_filtered" "CytB_filtered" "COI_filtered" "12S_dereplicated" "16S_dereplicated" "CytB_dereplicateed" "COI_dereplicated" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
+printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" "Sample" "Raw_reads" "Merged_pairs" "12S_clipped" "16S_clipped" "CytB_clipped" "12S_filtered" "16S_filtered" "CytB_filtered" "12S_dereplicated" "16S_dereplicated" "CytB_dereplicateed" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 for sample in ${sample_name[@]}
 do
 	echo "Processing sample ${sample}..."
@@ -451,13 +416,6 @@ do
 	else
 		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	fi
-	if [ -f ./${PREFIX}/data/primerclip/${sample}.COI.fq ] && [ -s ./${PREFIX}/data/primerclip/${sample}.COI.fq ]
-	then
-		clip_cox1=$(grep -c "@"${MISEQ} ./${PREFIX}/data/primerclip/${sample}.COI.fq)
-		printf "%s\t" "$clip_cox1" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
-	else
-		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
-	fi
 	echo "	...Filtered..."
 	if [ -f ./${PREFIX}/data/filter/${sample}.12S.filter.fq ] && [ -s ./${PREFIX}/data/filter/${sample}.12S.filter.fq ]
 	then
@@ -477,13 +435,6 @@ do
 	then
 		filter_cytb=$(grep -c "@"${MISEQ} ./${PREFIX}/data/filter/${sample}.CytB.filter.fq)
 		printf "%s\t" "$filter_cytb" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
-	else
-		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
-	fi
-	if [ -f ./${PREFIX}/data/filter/${sample}.COI.filter.fq ] && [ -s ./${PREFIX}/data/filter/${sample}.COI.filter.fq ]
-	then
-		filter_cox1=$(grep -c "@"${MISEQ} ./${PREFIX}/data/filter/${sample}.COI.filter.fq)
-		printf "%s\t" "$filter_cox1" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
 		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	fi
@@ -508,13 +459,6 @@ do
 		printf "%s\t" "$derep_cytb" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
 		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
-	fi
-	if [ -f ./${PREFIX}/data/derep/${sample}.COI.filter.derep.fq ] && [ -s ./${PREFIX}/data/derep/${sample}.COI.filter.derep.fq ]
-	then
-		derep_cox1=$(grep -c "^@p" ./${PREFIX}/data/derep/${sample}.COI.filter.derep.fq)
-		printf "%s\n" "$derep_cox1" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
-	else
-		printf "%s\n" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	fi
 	echo "	...Done."
 	echo ""
