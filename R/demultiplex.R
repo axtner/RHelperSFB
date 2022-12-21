@@ -41,13 +41,16 @@ demultiplex = function(seq_dir = NA,
                        seq_machine = "M01108"){
   
   # test for input variables
+  if(is.na(seq_dir) == T){
+    stop("\'seq_dir\' is not set, please provide Illumina run folder.")
+  }
   if(dir.exists(seq_dir) == F){
     stop(paste0("seq_dir = \"", seq_dir, "\" does not exist. Please check."))
   }
   
   in_dir = paste0(seq_dir, "/Data/Intensities/BaseCalls/")
   if(dir.exists(in_dir) == F){
-    stop(paste0("The folder \"", in_dir, "\" that should contain the basecall files does not exist. Please check the run folder."))
+    stop(paste0("The folder \"", in_dir, "\" that should contain the basecall files does not exist. Please check the Illumina run folder."))
   }
   
   # set output folder name, if out_dir not specified
