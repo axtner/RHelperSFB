@@ -24,7 +24,7 @@ exec 2> >(tee -a read_preprocessing.`date +%Y-%m-%d`.log >&2)
 # readLength is the read length
 # tagLength is the tag length
 # SampleSheet is a text file with information on the sample names and the sequencing (plate) tags - see bundled example for format.
-# loci codes the combination of loci to search for as a binary string with each locus coded as either present (1) or absent (0) in the order: 12S,16S,CytB,COI. e.g. 16S only would be 0100, 12S and CytB would be 1010.
+# loci codes the combination of loci to search for as a binary string with each locus coded as either present (1) or absent (0) in the order: 12S,16S,CytB. e.g. 16S only would be 0100, 12S and CytB would be 1010.
 # sampleTagDir is a directory containing a text file with a list of sample names and the sample tags for each plate tag. file name format: PlateLabel.txt (PlateLabel should match Sample_ID in SampleSheet.csv extactly). file contents format: sample_name fwdTag revTag
 
 ##### WELCOME
@@ -41,7 +41,7 @@ then
 	echo "readLength is the read length"
 	echo "tagLength is the tag length"
 	echo "SampleSheet is a text file with information on the sample names and the sequencing (plate) tags - see bundled example for format."
-	echo "loci codes the combination of loci to search for as a binary string with each locus coded as either present (1) or absent (0) in the order: 12S,16S,CytB,COI. e.g. 16S only would be 0100, 12S and CytB would be 1010"
+	echo "loci codes the combination of loci to search for as a binary string with each locus coded as either present (1) or absent (0) in the order: 12S,16S,CytB. e.g. 16S only would be 010, 12S and CytB would be 101"
 	echo "sampleTagDir is a directory containing a text file with a list of sample names and the sample tags for each plate. file name format: PlateLabel.txt (PlateLabel should match Sample_ID in SampleSheet.csv extactly). file contents format: sample_name fwdTag revTag"
 	echo ""
 	exit 1
@@ -75,7 +75,6 @@ DATE=`date +%Y-%m-%d`
 SRNA=$(echo ${LOCI} | cut -c1)
 LRNA=$(echo ${LOCI} | cut -c2)
 CYTB=$(echo ${LOCI} | cut -c3)
-COX1=$(echo ${LOCI} | cut -c4)
 
 ##### FUNCTIONS
 function clip_12S {
@@ -102,14 +101,6 @@ function clip_CytB {
 	echo "	Done."
 	echo ""
 }
-function clip_COI {
-	echo "	Clipping COI primer sequences..."
-	LOCUS=(COI)
-	cutadapt -a TCCACTAATCACAARGATATTGGTAC...ATAATCGGAGCCCCTGATA$ --minimum-length 200 -o ./${PREFIX}/data/primerclip/${sample}.${LOCUS}.fq --discard-untrimmed ./${PREFIX}/data/merge/${sample}.merge.fq
-	echo ""
-	echo "	Done."
-	echo ""
-}
 function filter {
 	usearch -fastq_filter ./${PREFIX}/data/primerclip/${sample}.${LOCUS}.fq -fastqout ./${PREFIX}/data/filter/${sample}.${LOCUS}.filter.fq -fastq_maxee 0.5 -threads 4
 	echo ""
@@ -131,7 +122,7 @@ echo "Generating output directory ./${PREFIX}..."
 mkdir ./${PREFIX}
 echo "Generating subdirectory structure..."
 # make some subdirectories as needed
-mkdir -p ./${PREFIX}/data/plates
+mkdir -p ./${PREFIX}/data/plates/determined
 mkdir -p ./${PREFIX}/data/samples
 mkdir -p ./${PREFIX}/data/merge
 mkdir -p ./${PREFIX}/data/primerclip
@@ -145,20 +136,20 @@ echo "Running bcl2fastq, this may take some time..."
 # using UMI setting
 bcl2fastq --input-dir ${RAWDIR} --output-dir ./${PREFIX}/data/plates --barcode-mismatches 1 --with-failed-reads --minimum-trimmed-read-length ${READLEN} --sample-sheet ${PLATE} --loading-threads 4 --processing-threads 16 --writing-threads 4
 echo ""
-echo "Done. Compressed FASTQ files (R1 and R2 per plate) are in ./${PREFIX}/data/raw"
+echo "Done. Compressed FASTQ files (R1 and R2 per plate) are in ./${PREFIX}/data/plates"
 echo ""
 echo "Checking file names..."
 echo "Files are:"
-file_path=($(find ./${PREFIX}/data/plates/${PREFIX} -mindepth 1 -maxdepth 1 -type f -name "*.f*q*"))
+file_path=($(find ./${PREFIX}/data/plates/ -mindepth 1 -maxdepth 1 -type f -name "*.f*q*"))
 printf '%s\n' "${file_path[@]}"
 echo ""
 # Need to simplify names
 echo "Renaming..."
-for file in ./${PREFIX}/data/plates/${PREFIX}/*.f*q*
+for file in ./${PREFIX}/data/plates/*.f*q*
 do mv "$file" "$(echo $file | sed 's/\(_S[0-9]\+_L001\)\(_R[12]\)\(_001\)/\2/g')"
 done
 echo "New names are:"
-file_name=($(find ./${PREFIX}/data/plates/${PREFIX} -mindepth 1 -maxdepth 1 -type f -name "*.f*q*"))
+file_name=($(find ./${PREFIX}/data/plates/ -mindepth 1 -maxdepth 1 -type f -name "*.f*q*"))
 printf '%s\n' "${file_name[@]}"
 echo ""
 echo "Plate names are:"
@@ -181,8 +172,11 @@ echo "Step 3: Assign to sample"
 echo "Using AdapterRemoval to split reads from each plate into samples..."
 for plate in ${plate_name[@]}
 do
-	echo "Processing $plate..."
-	AdapterRemoval --file1 ./${PREFIX}/data/plates/${PREFIX}/${plate}_R1.fastq.gz --file2 ./${PREFIX}/data/plates/${PREFIX}/${plate}_R2.fastq.gz --basename ./${PREFIX}/data/samples/${plate} --barcode-list ${SAMPLEDIR}/${plate}.txt --barcode-mm-r1 1 --barcode-mm-r2 1 --threads 4
+if [[ "${plate,,}" != *"Undetermined"* ]]
+  then
+  echo "Processing $plate..."
+  AdapterRemoval --file1 ./${PREFIX}/data/plates/${plate}_R1.fastq.gz --file2 ./${PREFIX}/data/plates/${plate}_R2.fastq.gz --basename ./${PREFIX}/data/samples/${plate} --barcode-list ${SAMPLEDIR}/${plate}.txt --barcode-mm-r1 1 --barcode-mm-r2 1 --threads 4 --maxn 50
+  fi
 done
 echo ""
 echo "Done."
