@@ -441,21 +441,21 @@ do
 	echo "	...Dereplicated..."
 	if [ -f ./${PREFIX}/data/derep/${sample}.12S.filter.derep.fq ] && [ -s ./${PREFIX}/data/derep/${sample}.12S.filter.derep.fq ]
 	then
-		derep_srna=$(grep -c "^@p" ./${PREFIX}/data/derep/${sample}.12S.filter.derep.fq)
+		derep_srna=$(grep -c "^@" ./${PREFIX}/data/derep/${sample}.12S.filter.derep.fq)
 		printf "%s\t" "$derep_srna" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
 		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	fi
 	if [ -f ./${PREFIX}/data/derep/${sample}.16S.filter.derep.fq ] && [ -s ./${PREFIX}/data/derep/${sample}.16S.filter.derep.fq ]
 	then
-		derep_lrna=$(grep -c "^@p" ./${PREFIX}/data/derep/${sample}.16S.filter.derep.fq)
+		derep_lrna=$(grep -c "^@" ./${PREFIX}/data/derep/${sample}.16S.filter.derep.fq)
 		printf "%s\t" "$derep_lrna" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
 		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	fi
 	if [ -f ./${PREFIX}/data/derep/${sample}.CytB.filter.derep.fq ] && [ -s ./${PREFIX}/data/derep/${sample}.CytB.filter.derep.fq ]
 	then
-		derep_cytb=$(grep -c "^@p" ./${PREFIX}/data/derep/${sample}.CytB.filter.derep.fq)
+		derep_cytb=$(grep -c "^@" ./${PREFIX}/data/derep/${sample}.CytB.filter.derep.fq)
 		printf "%s\t" "$derep_cytb" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
 		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
