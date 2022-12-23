@@ -456,9 +456,9 @@ do
 	if [ -f ./${PREFIX}/data/derep/${sample}.CytB.filter.derep.fq ] && [ -s ./${PREFIX}/data/derep/${sample}.CytB.filter.derep.fq ]
 	then
 		derep_cytb=$(grep -c "^@" ./${PREFIX}/data/derep/${sample}.CytB.filter.derep.fq)
-		printf "%s\t" "$derep_cytb" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
+		printf "%s\n" "$derep_cytb" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
-		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
+		printf "%s\n" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	fi
 	echo "	...Done."
 	echo ""
