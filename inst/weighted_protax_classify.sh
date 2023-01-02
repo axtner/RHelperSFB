@@ -21,7 +21,7 @@ exec 2> >(tee -a weighted_protax_classify.`date +%Y-%m-%d`.log >&2)
 # pathToData is the path to a directory containing FASTQ files to be processed one by one
 # locus is the target locus, must be one of: 12S, 16S, CYTB, COI. if you have more than one locus per run, run script once for each.
 # protaxdir is the path to a directory containing weighted protax models and clean databases for all 4 loci
-# screenforbio is the path to the screenforbio-mbc directory (must contain subdirectory protaxscripts)
+# screenforbio is the path to the directory of the local RHelperSFB package
 # outdir is the name to give the output directory (inside current)
 
 ##### START
@@ -36,7 +36,7 @@ then
 	echo "pathToData is the path to a directory containing FASTQ files to be processed one by one"
   echo "locus is the target locus, must be one of: 12S, 16S, CYTB, COI. if you have more than one locus per run, run script once for each"
   echo "protaxdir is the path to a directory containing weighted protax models and clean databases for all 4 loci (one subdirectory per locus)"
-	echo "screenforbio is the path to the screenforbio-mbc directory (must contain subdirectory protaxscripts)"
+	echo "screenforbio is the path to the directory of the local RHelperSFB package"
 	echo "outdir is the name to give the output directory (inside current)"
 	echo ""
 	exit 1
@@ -47,8 +47,8 @@ else
 	echo "Information from you:"
 	echo "FASTQ files to be processed are in ${1}"
   echo "Weighted protax models and reference databases are in ${3}"
-	echo "PROTAX Perl scripts are in ${4}/protaxscripts"
-	echo "Output directory will be ${5}"
+	echo "PROTAX Perl scripts are in ${4}"
+	echo "Output directory will be ${5} superior to the in_dir directory"
 	echo ""
 fi
 
@@ -96,13 +96,13 @@ model_date=$(basename $model_dir | cut -f3 -d"_")
 	  mkdir ./${OUTDIR}_${LOCUS}/${sample_name}/
 	  #convert fastq to fasta
 		echo "	Converting FASTQ to FASTA..."
-	  usearch -fastq_filter ${file} -fastaout ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.fa
+	  vsearch -fastq_filter ${file} -fastaout ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.fa
 	  #run LAST search
 		echo "	Running LAST search..."
 	  lastal -T 1 -a 1 -f 0 -m 1000 ${MODELS}/w_model_${model_date}_${LOCUS}/lastref_${LOCUS} ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.fa > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.last
 	  #convert LAST result to similarity
 		echo "	Convert LAST result to sequence similarity..."
-	  perl ${SCRIPTS}/protaxscripts/last2sim.pl ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.last > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.lastsim
+	  perl ${SCRIPTS}/last2sim.pl ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.last > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.lastsim
 	  #clean up
 	  rm ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.last
 	  #get IDs
@@ -110,7 +110,7 @@ model_date=$(basename $model_dir | cut -f3 -d"_")
 	  grep '^>' ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.fa | cut -c2- > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.ids
 	  #generate base log probability file
 		echo "	Generate base log probability file..."
-	  perl ${SCRIPTS}/protaxscripts/testsample2init.pl ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.ids > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.0.logprob
+	  perl ${SCRIPTS}/testsample2init.pl ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.ids > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.0.logprob
 	  #classify sequences at each taxonomic level (order, family, genus, species)
 		echo "	Classifying at..."
 	  for LEVEL in 1 2 3 4
@@ -119,15 +119,15 @@ model_date=$(basename $model_dir | cut -f3 -d"_")
 	    PREVLEVEL=$((LEVEL-1))
 	    IFILE=./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.${PREVLEVEL}.logprob
 	    OFILE=./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.${LEVEL}.logprob
-	    perl ${SCRIPTS}/protaxscripts/classify4.pl $IFILE ${MODELS}/w_model_${model_date}_${LOCUS}/wtax$LEVEL ${MODELS}/w_model_${model_date}_${LOCUS}/ref.wtax$LEVEL ${MODELS}/w_model_${model_date}_${LOCUS}/rseqs$LEVEL ${MODELS}/w_model_${model_date}_${LOCUS}/w_mcmc$LEVEL map ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.lastsim 0 .05 $OFILE 1
+	    perl ${SCRIPTS}/classify4.pl $IFILE ${MODELS}/w_model_${model_date}_${LOCUS}/wtax$LEVEL ${MODELS}/w_model_${model_date}_${LOCUS}/ref.wtax$LEVEL ${MODELS}/w_model_${model_date}_${LOCUS}/rseqs$LEVEL ${MODELS}/w_model_${model_date}_${LOCUS}/w_mcmc$LEVEL map ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.lastsim 0 .05 $OFILE 1
 	  done
 	  #add taxonomic info
 		echo "	Adding taxonomy..."
-	  perl ${SCRIPTS}/protaxscripts/add_taxonomy_info.pl ${MODELS}/w_model_${model_date}_${LOCUS}/taxonomy ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.0.logprob > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.class_probs
-	  perl ${SCRIPTS}/protaxscripts/add_taxonomy_info.pl ${MODELS}/w_model_${model_date}_${LOCUS}/taxonomy ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.1.logprob > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.order_probs
-	  perl ${SCRIPTS}/protaxscripts/add_taxonomy_info.pl ${MODELS}/w_model_${model_date}_${LOCUS}/taxonomy ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.2.logprob > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.family_probs
-	  perl ${SCRIPTS}/protaxscripts/add_taxonomy_info.pl ${MODELS}/w_model_${model_date}_${LOCUS}/taxonomy ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.3.logprob > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.genus_probs
-	  perl ${SCRIPTS}/protaxscripts/add_taxonomy_info.pl ${MODELS}/w_model_${model_date}_${LOCUS}/taxonomy ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.4.logprob > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.species_probs
+	  perl ${SCRIPTS}/add_taxonomy_info.pl ${MODELS}/w_model_${model_date}_${LOCUS}/taxonomy ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.0.logprob > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.class_probs
+	  perl ${SCRIPTS}/add_taxonomy_info.pl ${MODELS}/w_model_${model_date}_${LOCUS}/taxonomy ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.1.logprob > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.order_probs
+	  perl ${SCRIPTS}/add_taxonomy_info.pl ${MODELS}/w_model_${model_date}_${LOCUS}/taxonomy ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.2.logprob > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.family_probs
+	  perl ${SCRIPTS}/add_taxonomy_info.pl ${MODELS}/w_model_${model_date}_${LOCUS}/taxonomy ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.3.logprob > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.genus_probs
+	  perl ${SCRIPTS}/add_taxonomy_info.pl ${MODELS}/w_model_${model_date}_${LOCUS}/taxonomy ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.4.logprob > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.species_probs
 		#add sequence similarity of assigned species/genus (for unassigned reads takes best matching sequence)
 		for id in $(cut -f1 ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.species_probs | sort -u)
 		do
