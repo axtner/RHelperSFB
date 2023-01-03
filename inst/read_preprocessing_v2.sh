@@ -98,15 +98,15 @@ function clip_CytB {
 	LOCUS=(CytB)
 	cutadapt -a AAAAAGCTTCCATCCAACATCTCAGCATGATGAAA...TGAGGACAAATATCATTCTGAGGGGCTGCAGTTT$ --minimum-length 271 -o ./${PREFIX}/data/primerclip/${sample}.${LOCUS}.fq --discard-untrimmed ./${PREFIX}/data/merge/${sample}.merge.fq
 	echo ""
-	echo "	Done."
+	echo "Done."
 	echo ""
 }
 function filter {
-	usearch -fastq_filter ./${PREFIX}/data/primerclip/${sample}.${LOCUS}.fq -fastqout ./${PREFIX}/data/filter/${sample}.${LOCUS}.filter.fq -fastq_maxee 0.5 -threads 4
+	vsearch -fastq_filter ./${PREFIX}/data/primerclip/${sample}.${LOCUS}.fq -fastqout ./${PREFIX}/data/filter/${sample}.${LOCUS}.filter.fq -fastq_maxee 0.5 -threads 4
 	echo ""
 }
 function derep {
-	usearch -derep_fulllength ./${PREFIX}/data/filter/${sample}.${LOCUS}.filter.fq -fastqout ./${PREFIX}/data/derep/${sample}.${LOCUS}.filter.derep.fq -sizeout -strand both -minuniquesize 2 -relabel ${PREFIX}.${LOCUS}.${sample}_ -threads 4
+	vsearch -derep_fulllength ./${PREFIX}/data/filter/${sample}.${LOCUS}.filter.fq -fastqout ./${PREFIX}/data/derep/${sample}.${LOCUS}.filter.derep.fq -sizeout -strand both -minuniquesize 2 -relabel ${PREFIX}.${LOCUS}.${sample}_ -threads 4
 	echo ""
 }
 
@@ -202,7 +202,7 @@ echo ""
 echo "Done. There are ${#sample_name[@]} samples to process further."
 echo ""
 echo "Step 4: Merge pairs"
-echo "Merging pairs with usearch"
+echo "Merging pairs with vsearch"
 for sample in ${sample_name[@]}
 do
 	echo "Processing sample ${sample}..."
@@ -212,7 +212,7 @@ do
 		echo "	Sample has $pairs pairs"
 		if [ $pairs -ge 1000 ]
 		then
-			usearch -fastq_mergepairs ./${PREFIX}/data/samples/${sample}.R1.fq -reverse ./${PREFIX}/data/samples/${sample}.R2.fq -fastqout ./${PREFIX}/data/merge/${sample}.merge.fq -fastq_minovlen 50 -fastq_maxdiffpct 20 -fastq_maxdiffs 20 -threads 4
+			vsearch -fastq_mergepairs ./${PREFIX}/data/samples/${sample}.R1.fq -reverse ./${PREFIX}/data/samples/${sample}.R2.fq -fastqout ./${PREFIX}/data/merge/${sample}.merge.fq -fastq_minovlen 50 -fastq_maxdiffpct 20 -fastq_maxdiffs 20 -threads 4
 			echo ""
 		else
 			echo "	Too few sequences (<1000) to process. Skipping..."
@@ -270,7 +270,7 @@ echo ""
 echo "Done."
 echo ""
 echo "Step 6: Quality filter"
-echo "Filtering merged reads by expected error rate (must be ≤0.5) with usearch"
+echo "Filtering merged reads by expected error rate (must be ≤0.5) with vsearch"
 for sample in ${sample_name[@]}
 do
 	echo "Processing sample ${sample}..."
@@ -321,7 +321,7 @@ echo ""
 echo "Done."
 echo ""
 echo "Step 7: Dereplicate"
-echo "Dereplicating filtered reads with usearch"
+echo "Dereplicating filtered reads with vsearch"
 for sample in ${sample_name[@]}
 do
 	echo "Processing sample ${sample}..."

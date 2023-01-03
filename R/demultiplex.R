@@ -2,7 +2,7 @@
 #' 
 #' demultiplex 
 #' 
-#' Function deploys the read_preprocessing.sh script from the screenforbio pipeline of Alex Crampton-Platt. The original bash script has been edited to eliminate bugs. The bash script uses \code{bcl2fastq} (1), \code{cudadapt} (2), \code{adapterremoval} (3) and \code{usearch} (4). All four programmes must be installed on the computer running the analysis and their superior directory where their executable files are saved must be added to the PATH variable of the environment (e.g. use base::Sys.setenv() to add them in R).  
+#' Function deploys the read_preprocessing.sh script from the screenforbio pipeline of Alex Crampton-Platt. The original bash script has been edited to eliminate bugs. The bash script uses \code{bcl2fastq} (1), \code{cudadapt} (2), \code{adapterremoval} (3) and \code{vsearch} (4). All four programmes must be installed on the computer running the analysis and their superior directory where their executable files are saved must be added to the PATH variable of the environment (e.g. use base::Sys.setenv() to add them in R).  
 #' 
 #' @param seq_dir Run folder of an Illumina sequencing run.
 #' @param seq_run Sequencing run name (e.g. seq_run = "LeechSeq001").
@@ -27,8 +27,8 @@
 #' (3) \code{adapterremoval}:  
 #' \url{https://bmcresnotes.biomedcentral.com/articles/10.1186/s13104-016-1900-2}
 #' 
-#' (4) \code{usearch}: 
-#' \url{https://www.drive5.com/usearch/}
+#' (4) \code{vsearch}: 
+#' \url{https://github.com/torognes/vsearch}
 #' 
 #' @export
 demultiplex = function(seq_dir = NA,
