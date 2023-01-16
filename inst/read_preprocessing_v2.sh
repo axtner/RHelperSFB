@@ -71,6 +71,7 @@ PLATE=${6}
 LOCI=${7}
 SAMPLEDIR=${8}
 DATE=`date +%Y-%m-%d`
+DEREPDIR=${9}
 
 SRNA=$(echo ${LOCI} | cut -c1)
 LRNA=$(echo ${LOCI} | cut -c2)
@@ -102,11 +103,11 @@ function clip_CytB {
 	echo ""
 }
 function filter {
-	vsearch -fastq_filter ./${PREFIX}/data/primerclip/${sample}.${LOCUS}.fq -fastqout ./${PREFIX}/data/filter/${sample}.${LOCUS}.filter.fq -fastq_maxee 0.5 -threads 4
+	vsearch -fastx_filter ./${PREFIX}/data/primerclip/${sample}.${LOCUS}.fq -fastqout ./${PREFIX}/data/filter/${sample}.${LOCUS}.filter.fq -fastq_maxee 0.5 -threads 4
 	echo ""
 }
 function derep {
-	vsearch -derep_fulllength ./${PREFIX}/data/filter/${sample}.${LOCUS}.filter.fq -fastqout ./${PREFIX}/data/derep/${sample}.${LOCUS}.filter.derep.fq -sizeout -strand both -minuniquesize 2 -relabel ${PREFIX}.${LOCUS}.${sample}_ -threads 4
+	vsearch -fastx_uniques ./${PREFIX}/data/filter/${sample}.${LOCUS}.filter.fq -output ./${PREFIX}/data/derep/${sample}.${LOCUS}.filter.derep.fq -sizeout -strand both -minuniquesize 2 -relabel ${PREFIX}.${LOCUS}.${sample}_ -threads 4
 	echo ""
 }
 
@@ -131,6 +132,7 @@ mkdir -p ./${PREFIX}/data/derep
 echo ""
 echo "Output directory set up, now starting pre-processing."
 echo ""
+if [${DEREPDIR}=
 echo "Step 2: Base calls to FASTQ per plate"
 echo "Running bcl2fastq, this may take some time..."
 # using UMI setting
@@ -212,7 +214,8 @@ do
 		echo "	Sample has $pairs pairs"
 		if [ $pairs -ge 1000 ]
 		then
-			vsearch -fastq_mergepairs ./${PREFIX}/data/samples/${sample}.R1.fq -reverse ./${PREFIX}/data/samples/${sample}.R2.fq -fastqout ./${PREFIX}/data/merge/${sample}.merge.fq -fastq_minovlen 50 -fastq_maxdiffpct 20 -fastq_maxdiffs 20 -threads 4
+			#vsearch -fastq_mergepairs ./${PREFIX}/data/samples/${sample}.R1.fq -reverse ./${PREFIX}/data/samples/${sample}.R2.fq -fastqout ./${PREFIX}/data/merge/${sample}.merge.fq -fastq_minovlen 50 -fastq_maxdiffpct 20 -fastq_maxdiffs 20 -threads 12
+			flash ./${PREFIX}/data/samples/${sample}.R1.fq ./${PREFIX}/data/samples/${sample}.R2.fq --output-prefix=${sample} --output-directory=./${PREFIX}/data/merge -M 135 --threads 24
 			echo ""
 		else
 			echo "	Too few sequences (<1000) to process. Skipping..."
