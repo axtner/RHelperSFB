@@ -14,7 +14,7 @@
 #' @param seq_machine Name of the sequencing machine, needed for the bcl2fastq script that is deployed to convert the base calls files to fastq files. default is set to "M01108", the Illumina MiSeq machine of the Leibniz-IZW. 
 #' 
 #' @examples
-#' Simple example to analyse 16S sequencing reads with using th default settings:
+#' Simple example to analyse 16S sequencing reads with using the default settings:
 #' demultiplex(seq_dir = "/SequencingData/221114_M01108_0115/", seq_run = "SeqRun001")
 #' 
 #' @source
