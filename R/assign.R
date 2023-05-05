@@ -18,11 +18,9 @@
 #' (1) Somervuo et al. Methods in Ecology & Evolution 2017: 
 #' \url{https://doi.org/10.1111/2041-210X.12721}
 #' 
-#' @source
 #' (2) \code{last}: 
 #' \url{https://gitlab.com/mcfrith/last}
 #' 
-#' @source
 #' (3) \code{vsearch}: 
 #' \url{https://github.com/torognes/vsearch}
 #' 
