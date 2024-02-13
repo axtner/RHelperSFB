@@ -8,7 +8,6 @@
 #' @param out_dir Custom name of the created output folder that is created. Default is "AssignOut_" followed by marker and current date and time (e.g. "AssignOut_16S_20221219_110213")
 #' @param marker String defining the genetic marker used for metabarcoding. Must be can be one or several of "16S", "12S" or "CytB" (e.g. marker = c("12S", "16S"). Default is marker = "16S".
 #' @param model_dir Path to a directory containing PROTAX models and clean databases for all loci. Default uses the latest model from '/home/bioadmin/Protax/models'.
-#' @param sfb_dir Path to the screenforbio-mbc directory and it's subdirectory '/protaxscripts' (screenforbio pipeline of Alex Crampton-Platt).
 #' 
 #' @examples
 #' Simple example to analyse 16S sequencing reads with using th default settings:
@@ -39,9 +38,11 @@ assign = function(in_dir = NA,
     if(is.na(in_dir) == T){
     stop("\'in_dir\' not defined. Please provide folder containing dereplicated sequencing reads.")
     }
-    in_dir = paste0(in_dir,"/data/derep")
-    if(dir.exists(in_dir) == F){
-      stop(paste0("in_dir = \"", in_dir, "\" does not exist. Please check."))
+    if(length(list.files(in_dir, pattern="*filter.derep.fq")) == 0){
+      in_dir = list.dirs(in_dir, full.names = T)[grepl("*derep", list.dirs(in_dir, full.names = T))]
+      if(length(list.files(in_dir, pattern="*filter.derep.fq")) == 0){
+        stop(paste0("in_dir = \"", in_dir, "\" contains no result files matching the filter '*filter.derep.fq'. Please check."))
+      }
     }
   
     # use latest model if model_dir is not defined

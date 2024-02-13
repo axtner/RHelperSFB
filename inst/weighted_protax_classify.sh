@@ -96,10 +96,10 @@ model_date=$(basename $model_dir | cut -f3 -d"_")
 	  mkdir ./${OUTDIR}_${LOCUS}/${sample_name}/
 	  #convert fastq to fasta
 		echo "	Converting FASTQ to FASTA..."
-	  vsearch -fastq_filter ${file} -fastaout ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.fa
+	  usearch -fastq_filter ${file} -fastaout ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.fa
 	  #run LAST search
 		echo "	Running LAST search..."
-	  lastal -T 1 -a 1 -f 0 -m 1000 ${MODELS}/w_model_${model_date}_${LOCUS}/lastref_${LOCUS} ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.fa > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.last
+	  lastal -T 1 -a 1 -f 0 -m 1000 -P20 ${MODELS}/w_model_${model_date}_${LOCUS}/lastref_${LOCUS} ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.fa > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.last
 	  #convert LAST result to similarity
 		echo "	Convert LAST result to sequence similarity..."
 	  perl ${SCRIPTS}/last2sim.pl ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.last > ./${OUTDIR}_${LOCUS}/${sample_name}/${sample_name}.lastsim
