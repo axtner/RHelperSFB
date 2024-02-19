@@ -4,9 +4,15 @@ set -e
 set -u
 set -o pipefail
 
+# creating output dir
+echo ""
+starting=`date +%s`
+echo "Generating output directory ./${4}..."
+mkdir ./${4}
+
 # Send STDOUT and STDERR to log file
-exec > >(tee -a read_preprocessing.`date +%Y-%m-%d`.log)
-exec 2> >(tee -a read_preprocessing.`date +%Y-%m-%d`.log >&2)
+exec > >(tee -a ./${4}/read_preprocessing.`date +%Y-%m-%d`.log)
+exec 2> >(tee -a ./${4}/read_preprocessing.`date +%Y-%m-%d`.log >&2)
 
 ##### INFO
 
@@ -18,7 +24,7 @@ exec 2> >(tee -a read_preprocessing.`date +%Y-%m-%d`.log >&2)
 
 # usage: bash read_preprocessing.sh pathToData MiSeq RunName readLength tagLength SampleSheet loci sampleTagDir
 # where:
-# pathToData is the path to the raw /Data/Intensities/BaseCalls directory
+# pathToData is the path to the raw /Intensities/BaseCalls directory
 # MiSeq is the MiSeq maching name (e.g. M01108), the first 6 characters in the FASTQ read headers after '@'
 # RunName should be an appropriate short label to be used as a prefix for output files and folder
 # readLength is the read length
@@ -28,14 +34,14 @@ exec 2> >(tee -a read_preprocessing.`date +%Y-%m-%d`.log >&2)
 # sampleTagDir is a directory containing a text file with a list of sample names and the sample tags for each plate tag. file name format: PlateLabel.txt (PlateLabel should match Sample_ID in SampleSheet.csv extactly). file contents format: sample_name fwdTag revTag
 
 ##### WELCOME
-if [ "$#" -ne 8 -o ! -r ${6} ]
+if [ "$#" -ne 10 -o ! -r ${7} ]
 then
 	echo ""
-	echo "You are trying to use read_preprocessing_v2.sh but have not supplied enough/correct information. Please check the following:"
+	echo "Error! You are trying to use read_preprocessing_v2.sh but have not supplied enough/correct information. Please check the following:"
 	echo ""
 	echo "usage: bash read_preprocessing_v2.sh pathToData MiSeq RunName readLength tagLength SampleSheet loci sampleTagDir"
 	echo "where:"
-	echo "pathToData is the path to the raw /Data/Intensities/BaseCalls directory"
+	echo "pathToData is the path to the raw /Intensities/BaseCalls directory"
 	echo "MiSeq is the MiSeq maching name (e.g. M01108), the first 6 characters in the FASTQ read headers after '@'"
 	echo "RunName should be an appropriate short label to be used as a prefix for output files and folder"
 	echo "readLength is the read length"
@@ -53,25 +59,29 @@ else
 	echo "The time now is $(date)."
 	echo "Information from you:"
 	echo "Raw data is in ${1}"
-	echo "MiSeq name is ${2}"
-	echo "File prefix and output directory will be ${3}"
-	echo "Read length is ${4}, tag length is ${5}"
-	echo "SampleSheet with plate tags is ${6}"
-	echo "Primer sequences are in ${7}"
-	echo "Sample tags are in ${8}"
+	echo "Sequencing runs name is ${2}"
+	echo "MiSeq name is ${3}"
+	echo "Output directory will be ${4}"
+	echo "Read length is ${5}, tag length is ${6}"
+	echo "SampleSheet with plate tags is ${7}"
+	echo "Primer sequences are in ${8}"
+	echo "Sample tags are in ${9}"
+	echo "available cores are ${10}"
+	echo ""
 fi
 
 ##### PARAMETERS
 RAWDIR=${1}
-MISEQ=${2}
-PREFIX=${3}
-READLEN=${4}
-TAGLEN=${5}
-PLATE=${6}
-LOCI=${7}
-SAMPLEDIR=${8}
+SEQRUN=${2}
+MISEQ=${3}
+PREFIX=${4}
+READLEN=${5}
+TAGLEN=${6}
+PLATE=${7}
+LOCI=${8}
+SAMPLEDIR=${9}
+CORES=${10}
 DATE=`date +%Y-%m-%d`
-DEREPDIR=${9}
 
 SRNA=$(echo ${LOCI} | cut -c1)
 LRNA=$(echo ${LOCI} | cut -c2)
@@ -81,7 +91,7 @@ CYTB=$(echo ${LOCI} | cut -c3)
 function clip_12S {
 	echo "	Clipping 12S primer sequences..."
 	LOCUS=(12S)
-	cutadapt -a AAAAAGCTTCAAACTGGGATTAGATACCCCACTAT...ACACACCGCCCGTCACCCTCTGCAGTCA$ --minimum-length 350 -o ./${PREFIX}/data/primerclip/${sample}.${LOCUS}.fq --discard-untrimmed ./${PREFIX}/data/merge/${sample}.merge.fq
+	cutadapt -j ${CORES} -a AAAAAGCTTCAAACTGGGATTAGATACCCCACTAT...ACACACCGCCCGTCACCCTCTGCAGTCA$ --minimum-length 350 -o ./${PREFIX}/primerclip/${sample}.${LOCUS}.fq --discard-untrimmed ./${PREFIX}/merge/${sample}.merge.fq
 	echo ""
 	echo "	Done."
 	echo ""
@@ -89,7 +99,7 @@ function clip_12S {
 function clip_16S {
 	echo "	Clipping 16S primer sequences..."
 	LOCUS=(16S)
-	cutadapt -a CGGTTGGGGTGACCTCGGA...AGTTACCCTAGGGATAACAGC$ --minimum-length 83 -o ./${PREFIX}/data/primerclip/${sample}.${LOCUS}.fq --discard-untrimmed ./${PREFIX}/data/merge/${sample}.merge.fq
+	cutadapt -j ${CORES} -a CGGTTGGGGTGACCTCGGA...AGTTACCCTAGGGATAACAGC$ --minimum-length 83 -o ./${PREFIX}/primerclip/${sample}.${LOCUS}.fq --discard-untrimmed ./${PREFIX}/merge/${sample}.merge.fq
 	echo ""
 	echo "	Done."
 	echo ""
@@ -97,17 +107,17 @@ function clip_16S {
 function clip_CytB {
 	echo "	Clipping CytB primer sequences..."
 	LOCUS=(CytB)
-	cutadapt -a AAAAAGCTTCCATCCAACATCTCAGCATGATGAAA...TGAGGACAAATATCATTCTGAGGGGCTGCAGTTT$ --minimum-length 271 -o ./${PREFIX}/data/primerclip/${sample}.${LOCUS}.fq --discard-untrimmed ./${PREFIX}/data/merge/${sample}.merge.fq
+	cutadapt -j ${CORES} -a AAAAAGCTTCCATCCAACATCTCAGCATGATGAAA...TGAGGACAAATATCATTCTGAGGGGCTGCAGTTT$ --minimum-length 271 -o ./${PREFIX}/primerclip/${sample}.${LOCUS}.fq --discard-untrimmed ./${PREFIX}/merge/${sample}.merge.fq
 	echo ""
 	echo "Done."
 	echo ""
 }
 function filter {
-	vsearch -fastx_filter ./${PREFIX}/data/primerclip/${sample}.${LOCUS}.fq -fastqout ./${PREFIX}/data/filter/${sample}.${LOCUS}.filter.fq -fastq_maxee 0.5 -threads 4
+	vsearch -fastx_filter ./${PREFIX}/primerclip/${sample}.${LOCUS}.fq -fastqout ./${PREFIX}/filter/${sample}.${LOCUS}.filter.fq -fastq_maxee 0.5
 	echo ""
 }
 function derep {
-	vsearch -fastx_uniques ./${PREFIX}/data/filter/${sample}.${LOCUS}.filter.fq -output ./${PREFIX}/data/derep/${sample}.${LOCUS}.filter.derep.fq -sizeout -strand both -minuniquesize 2 -relabel ${PREFIX}.${LOCUS}.${sample}_ -threads 4
+	vsearch -fastx_uniques ./${PREFIX}/filter/${sample}.${LOCUS}.filter.fq -fastqout ./${PREFIX}/derep/${sample}.${LOCUS}.filter.derep.fq -sizeout -strand both -minuniquesize 2 -relabel ${SEQRUN}.${LOCUS}.${sample}_
 	echo ""
 }
 
@@ -115,43 +125,40 @@ function derep {
 echo ""
 echo "Start of read_preprocessing.sh"
 echo ""
-starting=`date +%s`
-echo "The time now is $(date)"
+echo "The start time was $(date)"
 echo ""
-echo "Step 1: Setup directory"
-echo "Generating output directory ./${PREFIX}..."
-mkdir ./${PREFIX}
+echo "Step 1:" 
 echo "Generating subdirectory structure..."
 # make some subdirectories as needed
-mkdir -p ./${PREFIX}/data/plates/determined
-mkdir -p ./${PREFIX}/data/samples
-mkdir -p ./${PREFIX}/data/merge
-mkdir -p ./${PREFIX}/data/primerclip
-mkdir -p ./${PREFIX}/data/filter
-mkdir -p ./${PREFIX}/data/derep
+mkdir -p ./${PREFIX}/plates/determined
+mkdir -p ./${PREFIX}/samples
+mkdir -p ./${PREFIX}/merge
+mkdir -p ./${PREFIX}/primerclip
+mkdir -p ./${PREFIX}/filter
+mkdir -p ./${PREFIX}/derep
 echo ""
 echo "Output directory set up, now starting pre-processing."
 echo ""
-if [${DEREPDIR}=
 echo "Step 2: Base calls to FASTQ per plate"
 echo "Running bcl2fastq, this may take some time..."
 # using UMI setting
-bcl2fastq --input-dir ${RAWDIR} --output-dir ./${PREFIX}/data/plates --barcode-mismatches 1 --with-failed-reads --minimum-trimmed-read-length ${READLEN} --sample-sheet ${PLATE} --loading-threads 4 --processing-threads 16 --writing-threads 4
+bcl2fastq --input-dir ${RAWDIR} --output-dir ./${PREFIX}/plates --barcode-mismatches 1 --with-failed-reads --minimum-trimmed-read-length ${READLEN} --sample-sheet ${PLATE} --loading-threads ${CORES} --processing-threads ${CORES} --writing-threads ${CORES}
+#bcl2fastq -R /home/bioadmin/LS04/ -o /home/bioadmin/LS04/DerepOut --barcode-mismatches 1 --with-failed-reads --minimum-trimmed-read-length 300 --sample-sheet /home/bioadmin/LS04/SampleSheet.csv --loading-threads 4 --processing-threads 16 --writing-threads 4
 echo ""
-echo "Done. Compressed FASTQ files (R1 and R2 per plate) are in ./${PREFIX}/data/plates"
+echo "Done. Compressed FASTQ files (R1 and R2 per plate) are in ./${PREFIX}/plates"
 echo ""
 echo "Checking file names..."
 echo "Files are:"
-file_path=($(find ./${PREFIX}/data/plates/ -mindepth 1 -maxdepth 1 -type f -name "*.f*q*"))
+file_path=($(find ./${PREFIX}/plates/ -mindepth 1 -maxdepth 1 -type f -name "*.f*q*"))
 printf '%s\n' "${file_path[@]}"
 echo ""
 # Need to simplify names
 echo "Renaming..."
-for file in ./${PREFIX}/data/plates/*.f*q*
+for file in ./${PREFIX}/plates/*.f*q*
 do mv "$file" "$(echo $file | sed 's/\(_S[0-9]\+_L001\)\(_R[12]\)\(_001\)/\2/g')"
 done
 echo "New names are:"
-file_name=($(find ./${PREFIX}/data/plates/ -mindepth 1 -maxdepth 1 -type f -name "*.f*q*"))
+file_name=($(find ./${PREFIX}/plates/ -mindepth 1 -maxdepth 1 -type f -name "*.f*q*"))
 printf '%s\n' "${file_name[@]}"
 echo ""
 echo "Plate names are:"
@@ -177,7 +184,7 @@ do
 if [[ "${plate}" != *"Undetermined"* ]]
   then
   echo "Processing $plate..."
-  AdapterRemoval --file1 ./${PREFIX}/data/plates/${plate}_R1.fastq.gz --file2 ./${PREFIX}/data/plates/${plate}_R2.fastq.gz --basename ./${PREFIX}/data/samples/${plate} --barcode-list ${SAMPLEDIR}/${plate}.txt --barcode-mm-r1 1 --barcode-mm-r2 1 --threads 4 --maxn 50
+  AdapterRemoval --file1 ./${PREFIX}/plates/${plate}_R1.fastq.gz --file2 ./${PREFIX}/plates/${plate}_R2.fastq.gz --basename ./${PREFIX}/samples/${plate} --barcode-list ./${SAMPLEDIR}/${plate}.txt --barcode-mm-r1 1 --barcode-mm-r2 1 --threads ${CORES} --maxn 50
   fi
 done
 echo ""
@@ -185,12 +192,12 @@ echo "Done."
 echo ""
 # Rename files
 echo "Renaming demultiplexed files to [sample].R[12].fq..."
-for file in ./${PREFIX}/data/samples/*pair[12].truncated
+for file in ./${PREFIX}/samples/*pair[12].truncated
 do mv "$file" "$(echo $file | sed 's/\(.pair\)\([12]\)\(.truncated\)/.R\2.fq/g')"
 done
 echo ""
 echo "Getting sample names..."
-sample_path=($(find ./${PREFIX}/data/samples/ -mindepth 1 -maxdepth 1 -type f -name "*.R1.fq"))
+sample_path=($(find ./${PREFIX}/samples/ -mindepth 1 -maxdepth 1 -type f -name "*.R1.fq"))
 for sample in ${sample_path[@]}
 do
 	touch tmp
@@ -207,15 +214,20 @@ echo "Step 4: Merge pairs"
 echo "Merging pairs with vsearch"
 for sample in ${sample_name[@]}
 do
+	echo ""
 	echo "Processing sample ${sample}..."
-	if [ -s ./${PREFIX}/data/samples/${sample}.R1.fq ]
+	if [ -s ./${PREFIX}/samples/${sample}.R1.fq ]
 	then
-		pairs=$(grep -c "@"${MISEQ} ./${PREFIX}/data/samples/${sample}.R1.fq)
+		pairs=$(grep -c "@"${MISEQ} ./${PREFIX}/samples/${sample}.R1.fq)
 		echo "	Sample has $pairs pairs"
-		if [ $pairs -ge 1000 ]
+		if [ $pairs -ge 100 ]
 		then
-			#vsearch -fastq_mergepairs ./${PREFIX}/data/samples/${sample}.R1.fq -reverse ./${PREFIX}/data/samples/${sample}.R2.fq -fastqout ./${PREFIX}/data/merge/${sample}.merge.fq -fastq_minovlen 50 -fastq_maxdiffpct 20 -fastq_maxdiffs 20 -threads 12
-			flash ./${PREFIX}/data/samples/${sample}.R1.fq ./${PREFIX}/data/samples/${sample}.R2.fq --output-prefix=${sample} --output-directory=./${PREFIX}/data/merge -M 135 --threads 24
+			vsearch -fastq_mergepairs ./${PREFIX}/samples/${sample}.R1.fq -reverse ./${PREFIX}/samples/${sample}.R2.fq -fastqout ./${PREFIX}/merge/${sample}.merge.fq -fastq_minovlen 50 -fastq_maxdiffpct 20 -fastq_maxdiffs 20 -threads ${CORES}
+			
+			#flash ./${PREFIX}/samples/${sample}.R1.fq ./${PREFIX}/samples/${sample}.R2.fq --output-prefix=${sample} --output-directory=./${PREFIX}/merge -M 65 --threads ${CORES}
+      
+      #usearch -fastq_mergepairs ./${PREFIX}/samples/${sample}.R1.fq -reverse ./${PREFIX}/samples/${sample}.R2.fq -fastqout ./${PREFIX}/merge/${sample}.merge.fq -fastq_minovlen 50 -fastq_maxdiffpct 20 -fastq_maxdiffs 20 -threads ${CORES}
+
 			echo ""
 		else
 			echo "	Too few sequences (<1000) to process. Skipping..."
@@ -233,23 +245,26 @@ echo "Step 5: Assign to locus and trim primers"
 echo "Using cutadapt to determine locus and trim primers"
 for sample in ${sample_name[@]}
 do
+	echo ""
 	echo "Processing sample ${sample}..."
-	if [ -f ./${PREFIX}/data/merge/${sample}.merge.fq ] && [ -s ./${PREFIX}/data/merge/${sample}.merge.fq ]
+	if [ -f ./${PREFIX}/merge/${sample}.merge.fq ] && [ -s ./${PREFIX}/merge/${sample}.merge.fq ]
 	then
-		pairs=$(grep -c "@"${MISEQ} ./${PREFIX}/data/merge/${sample}.merge.fq)
+		pairs=$(grep -c "@"${MISEQ} ./${PREFIX}/merge/${sample}.merge.fq)
 		echo "	Sample has $pairs pairs"
 		if [ $pairs -ge 500 ]
 		then
 			if [ ${SRNA} == 1 ]
 			then
 				echo "...12S present"
-				clip_12S
+				echo ""
+	      clip_12S
 			else
 				echo "...12S absent"
 			fi
 			if [ ${LRNA} == 1 ]
 			then
-				echo "...16S present"
+				echo "...16S present
+				"echo ""
 				clip_16S
 			else
 				echo "...16S absent"
@@ -257,7 +272,8 @@ do
 			if [ ${CYTB} == 1 ]
 			then
 				echo "...CytB present"
-				clip_CytB
+				echo ""
+	      clip_CytB
 			else
 				echo "...CytB absent"
 			fi
@@ -279,7 +295,7 @@ do
 	echo "Processing sample ${sample}..."
 	if [ ${SRNA} == 1 ]
 	then
-		if [ -f ./${PREFIX}/data/primerclip/${sample}.12S.fq ] && [ -s ./${PREFIX}/data/primerclip/${sample}.12S.fq ]
+		if [ -f ./${PREFIX}/primerclip/${sample}.12S.fq ] && [ -s ./${PREFIX}/primerclip/${sample}.12S.fq ]
 		then
 			LOCUS=(12S)
 			echo "	...filtering 12S"
@@ -293,7 +309,7 @@ do
 	fi
 	if [ ${LRNA} == 1 ]
 	then
-		if [ -f ./${PREFIX}/data/primerclip/${sample}.16S.fq ] && [ -s ./${PREFIX}/data/primerclip/${sample}.16S.fq ]
+		if [ -f ./${PREFIX}/primerclip/${sample}.16S.fq ] && [ -s ./${PREFIX}/primerclip/${sample}.16S.fq ]
 		then
 			LOCUS=(16S)
 			echo "	...filtering 16S"
@@ -307,7 +323,7 @@ do
 	fi
 	if [ ${CYTB} == 1 ]
 	then
-		if [ -f ./${PREFIX}/data/primerclip/${sample}.CytB.fq ] && [ -s ./${PREFIX}/data/primerclip/${sample}.CytB.fq ]
+		if [ -f ./${PREFIX}/primerclip/${sample}.CytB.fq ] && [ -s ./${PREFIX}/primerclip/${sample}.CytB.fq ]
 		then
 			LOCUS=(CytB)
 			echo "	...filtering CytB"
@@ -330,7 +346,7 @@ do
 	echo "Processing sample ${sample}..."
 	if [ ${SRNA} == 1 ]
 	then
-		if [ -f ./${PREFIX}/data/filter/${sample}.12S.filter.fq ] && [ -s ./${PREFIX}/data/filter/${sample}.12S.filter.fq ]
+		if [ -f ./${PREFIX}/filter/${sample}.12S.filter.fq ] && [ -s ./${PREFIX}/filter/${sample}.12S.filter.fq ]
 		then
 			LOCUS=(12S)
 			echo "	...dereplicating 12S"
@@ -344,7 +360,7 @@ do
 	fi
 	if [ ${LRNA} == 1 ]
 	then
-		if [ -f ./${PREFIX}/data/filter/${sample}.16S.filter.fq ] && [ -s ./${PREFIX}/data/filter/${sample}.16S.filter.fq ]
+		if [ -f ./${PREFIX}/filter/${sample}.16S.filter.fq ] && [ -s ./${PREFIX}/filter/${sample}.16S.filter.fq ]
 		then
 			LOCUS=(16S)
 			echo "	...dereplicating 16S"
@@ -358,7 +374,7 @@ do
 	fi
 	if [ ${CYTB} == 1 ]
 	then
-		if [ -f ./${PREFIX}/data/filter/${sample}.CytB.filter.fq ] && [ -s ./${PREFIX}/data/filter/${sample}.CytB.filter.fq ]
+		if [ -f ./${PREFIX}/filter/${sample}.CytB.filter.fq ] && [ -s ./${PREFIX}/filter/${sample}.CytB.filter.fq ]
 		then
 			LOCUS=(CytB)
 			echo "	...dereplicating CytB"
@@ -382,83 +398,83 @@ for sample in ${sample_name[@]}
 do
 	echo "Processing sample ${sample}..."
 	echo "	...Raw reads..."
-	if [ -f ./${PREFIX}/data/samples/${sample}.R1.fq ] && [ -s ./${PREFIX}/data/samples/${sample}.R1.fq ]
+	if [ -f ./${PREFIX}/samples/${sample}.R1.fq ] && [ -s ./${PREFIX}/samples/${sample}.R1.fq ]
 	then
-		raw=$(grep -c "@"${MISEQ} ./${PREFIX}/data/samples/${sample}.R1.fq)
+		raw=$(grep -c "@"${MISEQ} ./${PREFIX}/samples/${sample}.R1.fq)
 		printf "%s\t%s\t" "${sample}" "$raw" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
 		printf "%s\t%s\t" "${sample}" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	fi
 	echo "	...Merged pairs..."
-	if [ -f ./${PREFIX}/data/merge/${sample}.merge.fq ] && [ -s ./${PREFIX}/data/merge/${sample}.merge.fq ]
+	if [ -f ./${PREFIX}/merge/${sample}.extendedFrags.fq ] && [ -s ./${PREFIX}/merge/${sample}.extendedFrags.fq ]
 	then
-		merge=$(grep -c "@"${MISEQ} ./${PREFIX}/data/merge/${sample}.merge.fq)
+		merge=$(grep -c "@"${MISEQ} ./${PREFIX}/merge/${sample}.extendedFrags.fq)
 		printf "%s\t" "$merge" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
 		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	fi
 	echo "	...Primers clipped..."
-	if [ -f ./${PREFIX}/data/primerclip/${sample}.12S.fq ] && [ -s ./${PREFIX}/data/primerclip/${sample}.12S.fq ]
+	if [ -f ./${PREFIX}/primerclip/${sample}.12S.fq ] && [ -s ./${PREFIX}/primerclip/${sample}.12S.fq ]
 	then
-		clip_srna=$(grep -c "@"${MISEQ} ./${PREFIX}/data/primerclip/${sample}.12S.fq)
+		clip_srna=$(grep -c "@"${MISEQ} ./${PREFIX}/primerclip/${sample}.12S.fq)
 		printf "%s\t" "$clip_srna" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
 		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	fi
-	if [ -f ./${PREFIX}/data/primerclip/${sample}.16S.fq ] && [ -s ./${PREFIX}/data/primerclip/${sample}.16S.fq ]
+	if [ -f ./${PREFIX}/primerclip/${sample}.16S.fq ] && [ -s ./${PREFIX}/primerclip/${sample}.16S.fq ]
 	then
-		clip_lrna=$(grep -c "@"${MISEQ} ./${PREFIX}/data/primerclip/${sample}.16S.fq)
+		clip_lrna=$(grep -c "@"${MISEQ} ./${PREFIX}/primerclip/${sample}.16S.fq)
 		printf "%s\t" "$clip_lrna" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
 		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	fi
-	if [ -f ./${PREFIX}/data/primerclip/${sample}.CytB.fq ] && [ -s ./${PREFIX}/data/primerclip/${sample}.CytB.fq ]
+	if [ -f ./${PREFIX}/primerclip/${sample}.CytB.fq ] && [ -s ./${PREFIX}/primerclip/${sample}.CytB.fq ]
 	then
-		clip_cytb=$(grep -c "@"${MISEQ} ./${PREFIX}/data/primerclip/${sample}.CytB.fq)
+		clip_cytb=$(grep -c "@"${MISEQ} ./${PREFIX}/primerclip/${sample}.CytB.fq)
 		printf "%s\t" "$clip_cytb" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
 		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	fi
 	echo "	...Filtered..."
-	if [ -f ./${PREFIX}/data/filter/${sample}.12S.filter.fq ] && [ -s ./${PREFIX}/data/filter/${sample}.12S.filter.fq ]
+	if [ -f ./${PREFIX}/filter/${sample}.12S.filter.fq ] && [ -s ./${PREFIX}/filter/${sample}.12S.filter.fq ]
 	then
-		filter_srna=$(grep -c "@"${MISEQ} ./${PREFIX}/data/filter/${sample}.12S.filter.fq)
+		filter_srna=$(grep -c "@"${MISEQ} ./${PREFIX}/filter/${sample}.12S.filter.fq)
 		printf "%s\t" "$filter_srna" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
 		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	fi
-	if [ -f ./${PREFIX}/data/filter/${sample}.16S.filter.fq ] && [ -s ./${PREFIX}/data/filter/${sample}.16S.filter.fq ]
+	if [ -f ./${PREFIX}/filter/${sample}.16S.filter.fq ] && [ -s ./${PREFIX}/filter/${sample}.16S.filter.fq ]
 	then
-		filter_lrna=$(grep -c "@"${MISEQ} ./${PREFIX}/data/filter/${sample}.16S.filter.fq)
+		filter_lrna=$(grep -c "@"${MISEQ} ./${PREFIX}/filter/${sample}.16S.filter.fq)
 		printf "%s\t" "$filter_lrna" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
 		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	fi
-	if [ -f ./${PREFIX}/data/filter/${sample}.CytB.filter.fq ] && [ -s ./${PREFIX}/data/filter/${sample}.CytB.filter.fq ]
+	if [ -f ./${PREFIX}/filter/${sample}.CytB.filter.fq ] && [ -s ./${PREFIX}/filter/${sample}.CytB.filter.fq ]
 	then
-		filter_cytb=$(grep -c "@"${MISEQ} ./${PREFIX}/data/filter/${sample}.CytB.filter.fq)
+		filter_cytb=$(grep -c "@"${MISEQ} ./${PREFIX}/filter/${sample}.CytB.filter.fq)
 		printf "%s\t" "$filter_cytb" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
 		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	fi
 	echo "	...Dereplicated..."
-	if [ -f ./${PREFIX}/data/derep/${sample}.12S.filter.derep.fq ] && [ -s ./${PREFIX}/data/derep/${sample}.12S.filter.derep.fq ]
+	if [ -f ./${PREFIX}/derep/${sample}.12S.filter.derep.fq ] && [ -s ./${PREFIX}/derep/${sample}.12S.filter.derep.fq ]
 	then
-		derep_srna=$(grep -c "^@" ./${PREFIX}/data/derep/${sample}.12S.filter.derep.fq)
+		derep_srna=$(grep -c "^@" ./${PREFIX}/derep/${sample}.12S.filter.derep.fq)
 		printf "%s\t" "$derep_srna" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
 		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	fi
-	if [ -f ./${PREFIX}/data/derep/${sample}.16S.filter.derep.fq ] && [ -s ./${PREFIX}/data/derep/${sample}.16S.filter.derep.fq ]
+	if [ -f ./${PREFIX}/derep/${sample}.16S.filter.derep.fq ] && [ -s ./${PREFIX}/derep/${sample}.16S.filter.derep.fq ]
 	then
-		derep_lrna=$(grep -c "^@" ./${PREFIX}/data/derep/${sample}.16S.filter.derep.fq)
+		derep_lrna=$(grep -c "^@" ./${PREFIX}/derep/${sample}.16S.filter.derep.fq)
 		printf "%s\t" "$derep_lrna" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
 		printf "%s\t" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	fi
-	if [ -f ./${PREFIX}/data/derep/${sample}.CytB.filter.derep.fq ] && [ -s ./${PREFIX}/data/derep/${sample}.CytB.filter.derep.fq ]
+	if [ -f ./${PREFIX}/derep/${sample}.CytB.filter.derep.fq ] && [ -s ./${PREFIX}/derep/${sample}.CytB.filter.derep.fq ]
 	then
-		derep_cytb=$(grep -c "^@" ./${PREFIX}/data/derep/${sample}.CytB.filter.derep.fq)
+		derep_cytb=$(grep -c "^@" ./${PREFIX}/derep/${sample}.CytB.filter.derep.fq)
 		printf "%s\n" "$derep_cytb" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
 	else
 		printf "%s\n" "0" >> ./${PREFIX}/pre-processing_results.${DATE}.txt
@@ -477,10 +493,4 @@ echo "The time now is $(date)"
 runningtime=$((ending-starting))
 echo ""
 echo "Read processing took `echo $runningtime | awk '{printf "%.2f", $1/60}'` minutes (`echo $runningtime | awk '{printf "%.2f", $1/3600}'` hours) to complete."
-echo ""
-echo "Next step: Taxonomic assignment with PROTAX. Choice of analysis depends on the models to be used:"
-echo "	Unweighted - protax_classify.sh"
-echo "	Weighted - weighted_protax_classify.sh"
-echo ""
-echo "Have a nice day :-)"
 echo ""
