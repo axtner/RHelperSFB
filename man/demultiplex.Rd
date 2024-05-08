@@ -61,8 +61,3 @@ demultiplex
 \details{
 Function deploys several steps previously combined in the read_preprocessing.sh script from the screenforbio pipeline of Alex Crampton-Platt. It uses \code{bcl2fastq} (1), \code{cudadapt} (2), \code{adapterremoval} (3) and, optional \code{usearch}(4), \code{vsearch} (5) or \code{flash} (6). All programmes must be installed on the computer running the analysis and their superior directory where their executable files are saved must be added to the PATH variable of the environment (e.g. use base::Sys.setenv() to add them in R). Do not use the project column in the SampleSheet, otherwise \code{bc2fastq} creates subfolders that cannot be handled by the script.
 }
-\examples{
-Simple example to analyse 16S sequencing reads with using th default settings:
-demultiplex(seq_dir = "/SequencingData/221114_M01108_0115/", seq_run = "SeqRun001")
-
-}

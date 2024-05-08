@@ -12,12 +12,7 @@
 #' @param db_pwd String giving the password of the database user (optional). Default user has only SELECT privileges.
 #' @param db_host String giving the internal IP address of the host server of the biodiv database. If you wish to connect to another database you have to adjust db_name and db_host accordingly. To connect to the PostgreSQL database from outside the IZW domain it would need ssh connection to the database host and port forwarding to 5433. The db_host must be set to "localhost" then.
 #' @param db_port String giving the port the Postgres server listens to. Default is set to "5433", the port bidov database listens to.
-#' @examples 
-#' Simple use with default settings:
-#' get_reads(sample_id = c("VDBC144_2_1", "VDBC_185"), tax_query = c("Canis", "Felis"))
-#' 
-#' Query at family level from different database with different user from the same database host:  
-#' get_reads(sample_id = "VDBC", tax_query = "Canidae", tax_level = "family", db_name = "my_db", db_user = "my_db_user", db_pwd = "my_db_password")
+#'
 #' @export
 get_reads = function(sample_id = NA,
                      tax_level = "species", 

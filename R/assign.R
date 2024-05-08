@@ -9,10 +9,6 @@
 #' @param marker String defining the genetic marker used for metabarcoding. Must be can be one or several of "16S", "12S" or "CytB" (e.g. marker = c("12S", "16S"). Default is marker = "16S".
 #' @param model_dir Path to a directory containing PROTAX models and clean databases for all loci. Default uses the latest model from '/home/bioadmin/Protax/models'.
 #' 
-#' @examples
-#' Simple example to analyse 16S sequencing reads with using th default settings:
-#' assign(in_dir = "/SequencingData/221114_M01108_0115/seqRun001/data/derep")
-#' 
 #' @source
 #' (1) Somervuo et al. Methods in Ecology & Evolution 2017: 
 #' \url{https://doi.org/10.1111/2041-210X.12721}

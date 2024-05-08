@@ -14,10 +14,6 @@
 #' @param demulti_b Logical parameter defining if PCR batches shall be demultiplexed. By default it is set to 'demulti_b = TRUE'. If set to 'FALSE' only fastq files will be generated.
 #' @param demulti_s Logical parameter defining if a second demultiplexing step shall be performed. By default it is set to 'demulti_b = TRUE'. If set to 'FALSE' the reads will only be demultiplexed to PCR batch level and not to sample level.
 #' 
-#' @examples
-#' Simple example to analyse 16S sequencing reads with using th default settings:
-#' demultiplex(seq_dir = "/SequencingData/221114_M01108_0115/", seq_run = "SeqRun001")
-#' 
 #' @source
 #' (1) \code{bcl2fastq}: 
 #' \url{https://emea.support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software.html}

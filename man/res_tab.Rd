@@ -41,8 +41,3 @@ res_tab
 \details{
 Lists the assignments for the different taxonomic levels and calculated the mean log probability for those assignments made by PROTAX. Also lists the reference with the highest similarity and the average similarity score. To connect to the PostgreSQL database from outside the IZW domain it would need ssh connection to the database host and port forwarding to 5433. The db_host must be set to "localhost" then.
 }
-\examples{
-Simple query with default settings would give all results present in the database (not recommended): 
-res_tab()
-
-}

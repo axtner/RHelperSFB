@@ -38,8 +38,3 @@ assign
 \details{
 Function deploys the bash scripts for PROTAX-assignments of metabarcoding sequencing reads from the screenforbio pipeline of Alex Crampton-Platt. It can be used to call either weighted or unweighted PROTAX models ((1) Somervuo et al. 2017). PROTAX models must have been pre-trained using \code{train_protax}. The bash script uses \code{last} (2) and \code{vsearch} (3), which must be installed on the computer running the analysis and their superior directory containing its their executable files must be added to the PATH variable of the environment (e.g. use base::Sys.setenv() to add them in R).
 }
-\examples{
-Simple example to analyse 16S sequencing reads with using th default settings:
-assign(in_dir = "/SequencingData/221114_M01108_0115/seqRun001/data/derep")
-
-}
