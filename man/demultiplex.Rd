@@ -13,43 +13,53 @@
 (3) \code{adapterremoval}:  
 \url{https://bmcresnotes.biomedcentral.com/articles/10.1186/s13104-016-1900-2}
 
-(4) \code{vsearch}: 
+(4) \code{usearch}:
+\url{https://www.drive5.com/usearch/}
+
+(5) \code{vsearch}: 
 \url{https://github.com/torognes/vsearch}
+
+(6) \code{flash}:
+\url{https://}
 }
 \usage{
 demultiplex(
   seq_dir = NA,
   seq_run = NA,
   out_dir = NA,
-  loci = "0100",
-  cycles = 300,
-  index = 5,
-  tag_dir = "sample_tags",
-  seq_machine = "M01108"
+  marker = "16S",
+  cores = 24,
+  cycles = NA,
+  paired_end = T,
+  merge = NA,
+  demulti_b = T,
+  demulti_s = T
 )
 }
 \arguments{
 \item{seq_dir}{Run folder of an Illumina sequencing run.}
 
-\item{seq_run}{Sequencing run name (e.g. seq_run = "LeechSeq001").}
+\item{seq_run}{Optional sequencing run name (e.g. seq_run = "LeechSeq001"). if not provided it takes the 'Experiment Name' from the SampleSheet.}
 
-\item{out_dir}{Custom name of the created output folder that is created in the run folder. Default is "DerepOut_" followed by current date and time (e.g. "DerepOut_20221219_110204")}
+\item{out_dir}{Optional custom name of the created output folder that is created in the run folder. Default is "DerepOut_" followed by current date and time (e.g. "DerepOut_20221219_110204")}
 
-\item{loci}{String decoding the genetic markers that were sequenced as a binary string with each locus coded as either present (1) or absent (0) in the order: 12S, 16S, CytB, COI. Default is set to 16S only loci= "0100", 12S and CytB would be 1010.}
+\item{marker}{Optinal character giving the sequenced genetic markers. By default it is only "16S", but "12S" and "cytB" are also possible, e.g. 'marker = c("16S", "12S", "cytB")' would use all three options.}
 
-\item{cycles}{Integer giving the number of sequencing cycles. Default is cycles = 300.}
+\item{cycles}{Optional integer giving the number of sequencing cycles, per default read from the SampleSheet of the run.}
 
-\item{index}{Integer giving length of the indices. Default is index = 5.}
+\item{paired_end}{Logical parameter ste to 'paired_end = TRUE' by default, indicating if it was a paired end  or single read sequencing run.}
 
-\item{tag_dir}{Directory containing a text file with a list of sample names and the sample tags for each plate tag. File name format: PlateLabel.txt (e.g. "p5001.txt"). PlateLabel must match Sample_ID in SampleSheet.csv extactly. File contents format: sample_name fwdTag revTag}
+\item{merge}{Optional parameter defining the programme used for merging paired end reads. By default \code{usearch} will be used but alternatively it can be set to \code{vsearch} or \code{flash}, e.g. 'merge = vsearch'.}
 
-\item{seq_machine}{Name of the sequencing machine, needed for the bcl2fastq script that is deployed to convert the base calls files to fastq files. default is set to "M01108", the Illumina MiSeq machine of the Leibniz-IZW.}
+\item{demulti_b}{Logical parameter defining if PCR batches shall be demultiplexed. By default it is set to 'demulti_b = TRUE'. If set to 'FALSE' only fastq files will be generated.}
+
+\item{demulti_s}{Logical parameter defining if a second demultiplexing step shall be performed. By default it is set to 'demulti_b = TRUE'. If set to 'FALSE' the reads will only be demultiplexed to PCR batch level and not to sample level.}
 }
 \description{
 demultiplex
 }
 \details{
-Function deploys the read_preprocessing.sh script from the screenforbio pipeline of Alex Crampton-Platt. The original bash script has been edited to eliminate bugs. The bash script uses \code{bcl2fastq} (1), \code{cudadapt} (2), \code{adapterremoval} (3) and \code{vsearch} (4). All four programmes must be installed on the computer running the analysis and their superior directory where their executable files are saved must be added to the PATH variable of the environment (e.g. use base::Sys.setenv() to add them in R).
+Function deploys several steps previously combined in the read_preprocessing.sh script from the screenforbio pipeline of Alex Crampton-Platt. It uses \code{bcl2fastq} (1), \code{cudadapt} (2), \code{adapterremoval} (3) and, optional \code{usearch}(4), \code{vsearch} (5) or \code{flash} (6). All programmes must be installed on the computer running the analysis and their superior directory where their executable files are saved must be added to the PATH variable of the environment (e.g. use base::Sys.setenv() to add them in R). Do not use the project column in the SampleSheet, otherwise \code{bc2fastq} creates subfolders that cannot be handled by the script.
 }
 \examples{
 Simple example to analyse 16S sequencing reads with using th default settings:

@@ -15,18 +15,22 @@
 \url{https://github.com/torognes/vsearch}
 }
 \usage{
-assign(in_dir = NA, out_dir = NA, marker = "16S", model_dir = NA)
+assign(
+  in_dir = NA,
+  out_dir = NA,
+  marker = "16S",
+  model_dir = NA,
+  num_cores = 20
+)
 }
 \arguments{
-\item{in_dir}{Folder containing demultiplexed and dereplicated sequencing reads.}
+\item{in_dir}{Folder containing de-multiplexed and de-replicated sequencing reads.}
 
 \item{out_dir}{Custom name of the created output folder that is created. Default is "AssignOut_" followed by marker and current date and time (e.g. "AssignOut_16S_20221219_110213")}
 
 \item{marker}{String defining the genetic marker used for metabarcoding. Must be can be one or several of "16S", "12S" or "CytB" (e.g. marker = c("12S", "16S"). Default is marker = "16S".}
 
 \item{model_dir}{Path to a directory containing PROTAX models and clean databases for all loci. Default uses the latest model from '/home/bioadmin/Protax/models'.}
-
-\item{sfb_dir}{Path to the screenforbio-mbc directory and it's subdirectory '/protaxscripts' (screenforbio pipeline of Alex Crampton-Platt).}
 }
 \description{
 assign

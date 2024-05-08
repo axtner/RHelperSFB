@@ -210,6 +210,8 @@ printf '%s\n' "${sample_name[@]}"
 echo ""
 echo "Done. There are ${#sample_name[@]} samples to process further."
 echo ""
+
+
 echo "Step 4: Merge pairs"
 echo "Merging pairs with vsearch"
 for sample in ${sample_name[@]}
@@ -222,11 +224,11 @@ do
 		echo "	Sample has $pairs pairs"
 		if [ $pairs -ge 100 ]
 		then
-			vsearch -fastq_mergepairs ./${PREFIX}/samples/${sample}.R1.fq -reverse ./${PREFIX}/samples/${sample}.R2.fq -fastqout ./${PREFIX}/merge/${sample}.merge.fq -fastq_minovlen 50 -fastq_maxdiffpct 20 -fastq_maxdiffs 20 -threads ${CORES}
+			#vsearch -fastq_mergepairs ./${PREFIX}/samples/${sample}.R1.fq -reverse ./${PREFIX}/samples/${sample}.R2.fq -fastqout ./${PREFIX}/merge/${sample}.merge.fq -fastq_minovlen 50 -fastq_maxdiffpct 20 -fastq_maxdiffs 20 -threads ${CORES}
 			
 			#flash ./${PREFIX}/samples/${sample}.R1.fq ./${PREFIX}/samples/${sample}.R2.fq --output-prefix=${sample} --output-directory=./${PREFIX}/merge -M 65 --threads ${CORES}
       
-      #usearch -fastq_mergepairs ./${PREFIX}/samples/${sample}.R1.fq -reverse ./${PREFIX}/samples/${sample}.R2.fq -fastqout ./${PREFIX}/merge/${sample}.merge.fq -fastq_minovlen 50 -fastq_maxdiffpct 20 -fastq_maxdiffs 20 -threads ${CORES}
+      usearch -fastq_mergepairs ./${PREFIX}/samples/${sample}.R1.fq -reverse ./${PREFIX}/samples/${sample}.R2.fq -fastqout ./${PREFIX}/merge/${sample}.merge.fq -fastq_minovlen 50 -fastq_maxdiffpct 20 -fastq_maxdiffs 20 -threads ${CORES}
 
 			echo ""
 		else
