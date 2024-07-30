@@ -12,10 +12,6 @@
 #' @param weight Optional numeric variable giving the weight for the expected species. Must be between 0 and 1.
 #' @param cores Optional parameter that can be used to parallelize 'lastal' in step 3, which speeds-up processing. Default is set 'cores = 1', which means a single thread is running.
 #' 
-#' @examples
-#' Simple example to train a Protax model for 126S reads:
-#' trainProtax(splist = "/training_data/Species_Vietnam.txt/")
-#' 
 #' @export
 
 train_protax = function(in_dir = NA,
