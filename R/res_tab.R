@@ -13,9 +13,6 @@
 #' @param db_pwd String giving the password of the database user (optional). Default user has only SELECT privileges.
 #' @param db_host String giving the internal IP address of the host server of the biodiv database. If you wish to connect to another database you have to adjust db_name and db_host accordingly. To connect to the PostgreSQL database from outside the IZW domain it would need ssh connection to the database host and port forwarding to 5433. The db_host must be set to "localhost" then.
 #' @param db_port String giving the port the Postgres server listens to. Default is set to "5433", the port biodiv database listens to.
-#' @examples
-#' Simple query with default settings would give all results present in the database (not recommended): 
-#' res_tab()
 #' 
 #' @export
 

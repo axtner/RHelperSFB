@@ -4,6 +4,7 @@ Title: R helper functions for the ScreenForBio pipeline
 Version: 0.0.1.0
 Authors@R: person("Jan", "Axtner", , "axtner@izw-berlin.de", c("aut", "cre"))
 Description: A suite of tools to extract or manipulate data originating from the ScreenForBio metabarcoding pipeline. 
+License: LGPL (>= 2.1)
 Depends: R (>= 4.1)
 Imports: DBI, RPostgres
 RoxygenNote: 7.2.3
