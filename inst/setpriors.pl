@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-$usage= "setpriors.pl proportion seleced_species taxonomy_file";
+$usage= "setpriors.pl proportion expected_species taxonomy_file";
 
 $proportion=shift;
 if (($proportion <= 0) or ($proportion >= 1)) {

@@ -28,8 +28,14 @@
 #' (3) \code{adapterremoval}:  
 #' \url{https://bmcresnotes.biomedcentral.com/articles/10.1186/s13104-016-1900-2}
 #' 
-#' (4) \code{vsearch}: 
+#' (4) \code{usearch}:
+#' \url{https://www.drive5.com/usearch/}
+#' 
+#' (5) \code{vsearch}: 
 #' \url{https://github.com/torognes/vsearch}
+#' 
+#' (6) \code{flash}:
+#' \url{https://}
 #' 
 #' @export
 demultiplex = function(seq_dir = NA,
@@ -135,7 +141,7 @@ demultiplex = function(seq_dir = NA,
   }
   
   if(demulti_s == T){
-    dir.create(paste0(out_dir, "/samples"))
+    dir.create(paste0(seq_dir, "/", out_dir, "/samples"))
     message(paste0("\nStep 2\nDeploying AdapterRemoval to demultiplex to sample level. This might take a while, maybe go and get a coffee..."))
     
     for(batch in batches){
@@ -162,7 +168,7 @@ demultiplex = function(seq_dir = NA,
         } else {next}
       }
       # processing single reads
-      if(demulti_s == F){
+      if(paired_end == F){
         new_name = gsub("truncated", "R1.fq", basename(file))
         sample = paste0(lapply(strsplit(basename(file),"\\."), "[[", 1), ".",
                         lapply(strsplit(basename(file),"\\."), "[[", 2))
@@ -175,10 +181,11 @@ demultiplex = function(seq_dir = NA,
     
     # merging read pairs R1/R2 per sample if paired-end reads and primer clipping; looping per sample
     if(paired_end == T){    
-      if(exists(paste0(out_dir,"/merge")) == F){
-        dir.create(paste0(out_dir, "/merge"))
+      if(exists(paste0(seq_dir, "/", out_dir,"/merge")) == F){
+        dir.create(paste0(seq_dir, "/", out_dir, "/merge"))
       }
       for(sample in samples){
+        if(file.size(paste0(seq_dir, "/", out_dir, "/samples/", sample, ".R1.fq")) == 0){next}
         R1 <- paste0(seq_dir, "/", out_dir, "/samples/", sample, ".R1.fq")
         R2 <- paste0(seq_dir, "/", out_dir, "/samples/", sample, ".R2.fq")
         if(sum(grepl("@M",readLines(R1))) == 0){
@@ -188,66 +195,83 @@ demultiplex = function(seq_dir = NA,
           # merging reads
           writeLines(paste0("\nSample '", sample, "' has ", sum(grepl("@M",readLines(R1))), " sequence pairs that will be merged."))
           if(!is.na(merge) & merge == "vsearch"){
-            y <- paste0("vsearch -fastq_mergepairs ", R1, " -reverse ", R2, " -fastqout ", out_dir, "/merge", sample, ".merge.fq -fastq_minovlen 50 -fastq_maxdiffpct 20 -fastq_maxdiffs 20 -threads", cores)
+            y <- paste0("vsearch -fastq_mergepairs ", R1, " -reverse ", R2, " -fastqout ", seq_dir, "/",out_dir, "/merge", sample, ".merge.fq -fastq_minovlen 50 -fastq_maxdiffpct 20 -fastq_maxdiffs 20 -threads", cores)
           }
           if(!is.na(merge) & merge == "flash"){
-            y <- paste0("flash ", R1, R2, " --output-prefix=", sample, " --output-directory=", out_dir, "/merge -M 65 --threads ", cores)
+            y <- paste0("flash ", R1, R2, " --output-prefix=", sample, " --output-directory=", seq_dir, "/",out_dir, "/merge -M 65 --threads ", cores)
           } else {
-            y <- paste0("usearch -fastq_mergepairs ", R1, " -reverse ", R2, " -fastqout ", out_dir, "/merge/", sample, ".merge.fq -fastq_minovlen 50 -fastq_maxdiffpct 20 -fastq_maxdiffs 20 -threads ", cores)
+            y <- paste0("usearch -fastq_mergepairs ", R1, " -reverse ", R2, " -fastqout ", seq_dir, "/",out_dir, "/merge/", sample, ".merge.fq -fastq_minovlen 50 -fastq_maxdiffpct 20 -fastq_maxdiffs 20 -threads ", cores)
           }
           system(y)
-          if(length(readLines(paste0(out_dir, "/merge/", sample, ".merge.fq")))==0){
+          if(length(readLines(paste0(seq_dir, "/", out_dir, "/merge/", sample, ".merge.fq")))==0){
             message("WARNING: Failed to merge existing read pairs.")
             unlink(paste0(out_dir, "/merge/", sample, ".merge.fq"))
+            next
           }
         }
         
         # primer clipping
-        if(exists(paste0(out_dir,"/primerclip")) == F){
-          dir.create(paste0(out_dir, "/primerclip"))
+        if(exists(paste0(seq_dir, "/", out_dir,"/primerclip")) == F){
+          dir.create(paste0(seq_dir, "/", out_dir, "/primerclip"))
         }
         if("12s" %in% tolower(marker)){
           writeLines("\nClipping of 12S primers")
-          z1 <- paste0("cutadapt -j ", cores, " -a AAAAAGCTTCAAACTGGGATTAGATACCCCACTAT...ACACACCGCCCGTCACCCTCTGCAGTCA$ --minimum-length 350 -o ", out_dir, "/primerclip/", sample, ".12S.fq --discard-untrimmed ", out_dir, "/merge/", sample, ".merge.fq")
+          z1 <- paste0("cutadapt -j ", cores, " -a AAAAAGCTTCAAACTGGGATTAGATACCCCACTAT...ACACACCGCCCGTCACCCTCTGCAGTCA$ --minimum-length 350 --report=minimal -o ", seq_dir, "/", out_dir, "/primerclip/", sample, ".12S.fq --discard-untrimmed ", seq_dir, "/",out_dir, "/merge/", sample, ".merge.fq")
           writeLines("\nPrimer clipping of 12S...")
           system(z1)
+          if(file.size(paste0(seq_dir, "/", out_dir, "/primerclip/", sample, ".12S.fq"))==0){
+            message("WARNING: Failed to clip primers.")
+            unlink(paste0(seq_dir, "/", out_dir, "/primerclip/", sample, ".12S.fq"))
+            next
+          }
         }
         if("cytb" %in% tolower(marker)){
           writeLines("\nClipping of cytB primers")
-          z2 <- paste0("cutadapt -j ", cores, " -a AAAAAGCTTCCATCCAACATCTCAGCATGATGAAA...TGAGGACAAATATCATTCTGAGGGGCTGCAGTTT$ --minimum-length 270 -o ", out_dir, "/primerclip/", sample, ".CytB.fq --discard-untrimmed ", out_dir, "/merge/", sample, ".merge.fq")
+          z2 <- paste0("cutadapt -j ", cores, " -a AAAAAGCTTCCATCCAACATCTCAGCATGATGAAA...TGAGGACAAATATCATTCTGAGGGGCTGCAGTTT$ --minimum-length 270 --report=minimal -o ", seq_dir, "/", out_dir, "/primerclip/", sample, ".CytB.fq --discard-untrimmed ", seq_dir, "/", out_dir, "/merge/", sample, ".merge.fq")
           writeLines("\nPrimer clipping of CytB...")
           system(z2)
+          if(file.size(paste0(seq_dir, "/", out_dir, "/primerclip/", sample, ".CytB.fq"))==0){
+            message("WARNING: Failed to clip primers.")
+            unlink(paste0(seq_dir, "/", out_dir, "/primerclip/", sample, ".CytB.fq"))
+            next
+          }
         }
         if("16s" %in% tolower(marker)){
           writeLines("\nClipping of 16S primers")
-          z3 <- paste0("cutadapt -j ", cores, " -a CGGTTGGGGTGACCTCGGA...AGTTACCCTAGGGATAACAGC$ --minimum-length 80 -o ", out_dir, "/primerclip/", sample, ".16S.fq --discard-untrimmed ", out_dir, "/merge/", sample, ".merge.fq")
+          z3 <- paste0("cutadapt -j ", cores, " -a CGGTTGGGGTGACCTCGGA...AGTTACCCTAGGGATAACAGC$ --minimum-length 80 --report=minimal -o ", seq_dir, "/", out_dir, "/primerclip/", sample, ".16S.fq --discard-untrimmed ", seq_dir, "/", out_dir, "/merge/", sample, ".merge.fq")
           writeLines("\nPrimer clipping of 16S...")
           system(z3)
+          if(file.size(paste0(seq_dir, "/", out_dir, "/primerclip/", sample, ".16S.fq"))==0){
+            message("WARNING: Failed to clip primers.")
+            unlink(paste0(seq_dir, "/", out_dir, "/primerclip/", sample, ".16S.fq"))
+            next
+          }
         }
       }
     } #end of paired end merging and primer clipping
     
     # processing single reads
     if(paired_end == F){
-      if(exists(paste0(out_dir,"/primerclip")) == F){
-        dir.create(paste0(out_dir, "/primerclip"))
+      if(exists(paste0(seq_dir, "/", out_dir,"/primerclip")) == F){
+        dir.create(paste0(seq_dir, "/", out_dir, "/primerclip"))
       }
       for(sample in samples){
+        
         # primer clipping
         writeLines("\nStep 3\nPrimer clipping")
         if("12s" %in% tolower(marker)){
           writeLines("\nClipping of 12S primers")
-          z1 <- paste0("cutadapt -j ", cores, " -a AAAAAGCTTCAAACTGGGATTAGATACCCCACTAT...ACACACCGCCCGTCACCCTCTGCAGTCA$ --minimum-length 350 -o ", out_dir, "/primerclip/", sample, ".12S.fq --discard-untrimmed ", out_dir, "/samples/", sample, ".R1.fq")
+          z1 <- paste0("cutadapt -j ", cores, " -a AAAAAGCTTCAAACTGGGATTAGATACCCCACTAT...ACACACCGCCCGTCACCCTCTGCAGTCA$ --minimum-length 350 --report=minimal -o ", seq_dir, "/", out_dir, "/primerclip/", sample, ".12S.fq --discard-untrimmed ", seq_dir, "/", out_dir, "/samples/", sample, ".R1.fq")
           system(z1)
         }
         if("cytb" %in% tolower(marker)){
           writeLines("\nClipping of cytB primers")
-          z2 <- paste0("cutadapt -j ", cores, " -a AAAAAGCTTCCATCCAACATCTCAGCATGATGAAA...TGAGGACAAATATCATTCTGAGGGGCTGCAGTTT$ --minimum-length 270 -o ", out_dir, "/primerclip/", sample, ".CytB.fq --discard-untrimmed ", out_dir, "/samples/", sample, ".R1.fq")
+          z2 <- paste0("cutadapt -j ", cores, " -a AAAAAGCTTCCATCCAACATCTCAGCATGATGAAA...TGAGGACAAATATCATTCTGAGGGGCTGCAGTTT$ --minimum-length 270 --report=minimal -o ", seq_dir, "/", out_dir, "/primerclip/", sample, ".CytB.fq --discard-untrimmed ", seq_dir, "/", out_dir, "/samples/", sample, ".R1.fq")
           system(z2)
         }
         if("16s" %in% tolower(marker)){
           writeLines("\nClipping of 16S primers")
-          z3 <- paste0("cutadapt -j ", cores, " -a CGGTTGGGGTGACCTCGGA...AGTTACCCTAGGGATAACAGC$ --minimum-length 80 -o ", out_dir, "/primerclip/", sample, ".16S.fq --discard-untrimmed ", out_dir, "/samples/", sample, ".R1.fq")
+          z3 <- paste0("cutadapt -j ", cores, " -a CGGTTGGGGTGACCTCGGA...AGTTACCCTAGGGATAACAGC$ --minimum-length 80 --report=minimal -o ", seq_dir, "/", out_dir, "/primerclip/", sample, ".16S.fq --discard-untrimmed ", seq_dir, "/", out_dir, "/samples/", sample, ".R1.fq")
           system(z3)
         }
       }
@@ -255,14 +279,19 @@ demultiplex = function(seq_dir = NA,
   } # end of batch demultiplexing
   
   # quality filtering
-  if(exists(paste0(out_dir,"/filter")) == F){
-    dir.create(paste0(out_dir, "/filter"))
+  if(exists(paste0(seq_dir, "/", out_dir,"/filter")) == F){
+    dir.create(paste0(seq_dir, "/", out_dir, "/filter"))
   }
   for(sample in samples){
     for(m in marker){
-      x1 <- paste0("vsearch -fastx_filter ", out_dir, "/primerclip/", sample,".", m, ".fq -fastqout ", out_dir, "/filter/", sample, ".", m, ".filter.fq -fastq_maxee 0.5")
+      x1 <- paste0("vsearch -fastx_filter ", seq_dir, "/", out_dir, "/primerclip/", sample,".", m, ".fq -fastqout ", seq_dir, "/", out_dir, "/filter/", sample, ".", m, ".filter.fq -fastq_maxee 0.5")
       
       system(x1)
+      if((file.size(paste0(seq_dir, "/", out_dir, "/filter/", sample, ".", m, ".filter.fq"))==0)| is.na(file.size(paste0(seq_dir, "/", out_dir, "/filter/", sample, ".", m, ".filter.fq")))){
+        message("WARNING: No reads passed filter.")
+        unlink(paste0(seq_dir, "/", out_dir, "/filter/", sample, ".", m, ".filter.fq"))
+        next
+      }
     }
   }
   
@@ -272,9 +301,10 @@ demultiplex = function(seq_dir = NA,
   }
   for(sample in samples){
     for(m in marker){
-      x2<- paste0("vsearch -fastx_uniques ", out_dir, "/filter/", sample, ".", m, ".filter.fq -fastqout ", out_dir, "/derep/", sample, ".filter.derep.fq -sizeout -strand both -minuniquesize 2 -relabel ", seq_run, ".", m, ".", sample, "_")
+      x2<- paste0("vsearch -fastx_uniques ", seq_dir, "/", out_dir, "/filter/", sample, ".", m, ".filter.fq -fastqout ", seq_dir, "/", out_dir, "/derep/", sample, ".", m, ".filter.derep.fq -sizeout -strand both -minuniquesize 2 -relabel '", seq_run, ".", m, ".", sample, "_'")
       system(x2)
     }
   }
+  message(paste0("\nActual time: ", Sys.time(), "\nDone with demultiplexing of ", seq_run, " from run folder ", seq_dir, ".\nHave a nice day!"))
 } 
-#end of demultiplex2 function
+
